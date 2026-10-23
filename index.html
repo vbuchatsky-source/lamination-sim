@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<title>Tube Lamination Mechanism – Concept Simulation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap');
+  html,body{margin:0;height:100%;overflow:hidden;background:#1b1e23;font-family:Rubik,Arial,sans-serif;color:#e8ecf1}
+  #c{position:fixed;inset:0;display:block;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  html,body{overscroll-behavior:none}
+  #labels{position:fixed;inset:0;pointer-events:none}
+  #labels svg{position:absolute;inset:0;width:100%;height:100%}
+  .lbl{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;font-size:13px;font-weight:500;
+       background:rgba(18,22,28,.78);border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:3px 8px}
+  .lbl.hot{border-color:#ff7a2a;color:#ffd2b0}
+  .lbl.lam{border-color:#e0a040;color:#ffe2a8}
+  .lbl.dim{transform:translate(-50%,-50%);background:rgba(10,30,45,.9);border-color:#3fc6ff;color:#bdeaff;font-weight:700;font-size:13px}
+  .lbl.warn{transform:translate(-50%,-50%);background:rgba(60,12,12,.92);border-color:#ff4d4d;color:#ffc9c9;font-weight:700}
+  .lbl.ok{transform:translate(-50%,-50%);background:rgba(10,45,20,.92);border-color:#4dff88;color:#c9ffd9;font-weight:700}
+  .lbl.note{transform:translate(-50%,-50%);background:rgba(18,22,28,.9);border-color:#ffd24d;color:#fff0c0}
+  #panel{position:fixed;top:14px;right:14px;width:310px;max-height:calc(100vh - 28px);overflow-y:auto;background:rgba(18,22,28,.9);
+         border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 16px;box-shadow:0 6px 24px rgba(0,0,0,.4);font-size:14px;box-sizing:border-box}
+  #panel::-webkit-scrollbar{width:6px} #panel::-webkit-scrollbar-thumb{background:#444d59;border-radius:3px}
+  #panel h1{font-size:16px;margin:0 0 4px}
+  #panel h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#ff9a5a;margin:14px 0 6px;border-top:1px solid rgba(255,255,255,.08);padding-top:10px}
+  #panel .sub{font-size:11.5px;color:#9aa6b2;margin-bottom:8px}
+  .row{margin:8px 0}
+  .row label{display:flex;justify-content:space-between}
+  .row input[type=range]{width:100%;accent-color:#ff7a2a}
+  .val{font-weight:700;color:#ffb27a}
+  .btns{display:flex;gap:8px;margin:8px 0}
+  button{flex:1;background:#2b323c;color:#e8ecf1;border:1px solid #444d59;border-radius:6px;padding:7px 0;font-family:inherit;font-size:14px;cursor:pointer}
+  button:hover{background:#38414d}
+  button.primary{background:#c2551b;border-color:#e06a2a}
+  button.on{background:#1d5e86;border-color:#3fa6e6}
+  .xbtn{display:block;width:100%;text-align:left;padding:8px 10px;margin:5px 0;font-size:13.5px;background:#232a33}
+  .xbtn b{color:#ff9a5a;margin-right:6px}
+  .xbtn small{display:block;color:#8b96a3;font-size:11px;margin-top:2px}
+  .xbtn:hover{background:#2f3843;border-color:#ff7a2a}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td{padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+  td.n{text-align:right;font-weight:600;color:#cfe3ff}
+  .bar{height:6px;background:#2b323c;border-radius:3px;margin-top:6px;overflow:hidden}
+  .bar div{height:100%;width:0;background:linear-gradient(90deg,#e0a040,#ff6a1a)}
+  .chk{display:flex;gap:6px;align-items:center;font-size:13px;margin-top:6px}
+  .note{font-size:11px;color:#8b96a3;margin-top:8px;line-height:1.4}
+  /* BOM */
+  #bom{position:fixed;top:14px;left:14px;width:290px;max-height:calc(100vh - 28px);overflow-y:auto;background:rgba(18,22,28,.92);border:1px solid rgba(255,255,255,.12);
+       border-radius:10px;padding:10px 12px;font-size:13px;display:none;box-sizing:border-box}
+  #bom.open{display:block}
+  #bom h3{margin:2px 0 6px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+  #bom h3 button{flex:none;width:26px;padding:2px 0}
+  .bi{display:flex;gap:8px;padding:5px 6px;border-radius:5px;cursor:pointer;border:1px solid transparent}
+  .bi:hover{background:#26303a}
+  .bi.sel{background:#16394f;border-color:#3fa6e6}
+  .bi .no{color:#ff9a5a;font-weight:700;width:18px}
+  .bi .q{color:#8b96a3;margin-left:auto;white-space:nowrap}
+  .bi .d{display:block;color:#8b96a3;font-size:11px}
+  /* explainer player */
+  #xp{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(820px,calc(100vw - 30px));background:rgba(14,18,24,.94);
+      border:1px solid rgba(255,140,60,.45);border-radius:12px;padding:12px 16px 10px;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5);box-sizing:border-box}
+  body.explaining #xp{display:block}
+  body.explaining #panel, body.explaining #bom{display:none}
+  #xpHead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  #xpTitle{font-size:13px;color:#ff9a5a;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  #xpStepNo{font-size:12px;color:#8b96a3;white-space:nowrap}
+  #xpStep{font-size:18px;font-weight:700;margin:4px 0 2px}
+  #xpText{font-size:14px;line-height:1.45;color:#d3dae2;min-height:40px}
+  #xpText code{background:#26303a;border-radius:4px;padding:1px 5px;color:#ffd2a0;font-family:inherit;font-weight:500}
+  #xpCtl{display:flex;gap:6px;margin-top:8px;align-items:center}
+  #xpCtl button{flex:none;width:42px;padding:5px 0;font-size:15px}
+  #xpCtl button.wide{width:auto;padding:5px 12px;font-size:13px}
+  #xpProg{flex:1;height:8px;background:#2b323c;border-radius:4px;position:relative;cursor:pointer;overflow:hidden}
+  #xpProg div{position:absolute;inset:0;width:0;background:linear-gradient(90deg,#e0a040,#ff6a1a)}
+  #xpProg span{position:absolute;top:0;bottom:0;width:2px;background:rgba(0,0,0,.6)}
+  #inset{position:fixed;left:16px;top:16px;display:none;border:1px solid rgba(63,198,255,.5);border-radius:10px;background:rgba(10,14,20,.92)}
+  /* render (video) mode */
+  body.render #panel{display:none}
+  body.render #xpCtl{display:none}
+  #hud{display:none}
+  body.render:not(.explaining) #hud{display:block}
+  #title{position:fixed;top:18px;left:22px;background:rgba(18,22,28,.8);border-left:4px solid #ff7a2a;padding:8px 14px;border-radius:6px}
+  #title b{font-size:20px;display:block}
+  #title span{font-size:12.5px;color:#a9b4bf}
+  #readout{position:fixed;bottom:18px;left:22px;display:flex;gap:10px}
+  #readout div{background:rgba(18,22,28,.82);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:6px 12px;font-size:13px;color:#a9b4bf}
+  #readout div b{display:block;font-size:18px;color:#ffb27a;text-align:left}
+  #disclaimer{position:fixed;bottom:22px;right:22px;font-size:11.5px;color:#8b96a3}
+  #toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:rgba(18,22,28,.92);border:1px solid #3fa6e6;border-radius:8px;padding:6px 14px;font-size:13px;display:none}
+
+  /* ---------- mobile / small screens (body.mobile is set by JS) ---------- */
+  html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+  #mbtn{display:none}
+  body.mobile #mbtn{display:flex;align-items:center;justify-content:center;gap:6px;position:fixed;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));
+    z-index:30;flex:none;width:auto;min-width:48px;height:48px;padding:0 16px;font-size:15px;font-weight:600;background:rgba(194,85,27,.95);border-color:#e06a2a;border-radius:24px;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+  body.mobile.explaining #mbtn{display:none}
+  body.mobile #panel{display:none;left:0;right:0;top:auto;bottom:0;width:100%;max-height:62dvh;border-radius:16px 16px 0 0;padding:12px 16px calc(16px + env(safe-area-inset-bottom));font-size:15px;z-index:20;-webkit-overflow-scrolling:touch}
+  body.mobile.menuopen #panel{display:block}
+  body.mobile.explaining #panel{display:none}
+  body.mobile.landscape #panel{left:auto;right:0;top:0;bottom:0;width:min(340px,46vw);max-height:none;height:100dvh;border-radius:16px 0 0 16px;padding-top:66px}
+  body.mobile #panel h1{font-size:17px;padding-right:110px}
+  body.mobile.landscape #panel h1{padding-right:0}
+  body.mobile button{min-height:44px}
+  body.mobile .xbtn{min-height:54px;font-size:14.5px}
+  body.mobile td{padding:6px 0;font-size:14px}
+  body.mobile .chk{min-height:42px;font-size:14.5px}
+  body.mobile .chk input{width:22px;height:22px}
+  body.mobile .row input[type=range]{-webkit-appearance:none;appearance:none;height:36px;background:transparent;touch-action:pan-y}
+  body.mobile .row input[type=range]::-webkit-slider-runnable-track{height:6px;background:#3a424d;border-radius:3px}
+  body.mobile .row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#ff7a2a;margin-top:-12px;border:3px solid #ffd2b0}
+  body.mobile .lbl{font-size:10.5px;padding:2px 6px}
+  body.mobile .lbl.dim,body.mobile .lbl.warn,body.mobile .lbl.ok,body.mobile .lbl.note{font-size:11px}
+  body.mobile #bom{left:0;right:0;top:auto;bottom:0;width:100%;max-height:52dvh;border-radius:16px 16px 0 0;z-index:25;font-size:14px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+  body.mobile.landscape #bom{right:auto;top:0;width:min(330px,44vw);max-height:none;height:100dvh;border-radius:0 16px 16px 0}
+  body.mobile .bi{min-height:44px;align-items:center}
+  body.mobile #bom h3 button{width:44px;height:44px}
+  body.mobile #xp{left:0;right:0;bottom:0;transform:none;width:100%;border-radius:16px 16px 0 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
+  body.mobile #xpStep{font-size:15.5px}
+  body.mobile #xpText{font-size:13px;line-height:1.4;max-height:20dvh;overflow-y:auto;min-height:0}
+  body.mobile #xpCtl{flex-wrap:wrap;gap:8px}
+  body.mobile #xpProg{order:-1;flex:1 1 100%;height:14px;border-radius:7px}
+  body.mobile #xpCtl button{width:auto;flex:1 1 0;height:46px;font-size:17px}
+  body.mobile #xpCtl button.wide{flex:1.4 1 0;font-size:14px}
+  body.mobile.landscape #xp{left:auto;right:0;top:0;bottom:0;width:min(330px,42vw);border-radius:16px 0 0 16px;display:none;flex-direction:column;overflow-y:auto}
+  body.mobile.landscape.explaining #xp{display:flex}
+  body.mobile.landscape #xpText{max-height:none;flex:1}
+  body.mobile #inset{left:8px;top:calc(8px + env(safe-area-inset-top));width:min(56vw,240px);height:auto}
+  body.mobile.landscape #inset{width:min(30vw,220px)}
+</style>
+<script async src="./vendor/es-module-shims.js"></script>
+<script type="importmap">
+{"imports":{"three":"./vendor/three/three.module.js",
+ "three/addons/":"./vendor/three/jsm/"}}
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="labels"><svg id="lines"></svg></div>
+<canvas id="inset" width="400" height="260"></canvas>
+<div id="toast"></div>
+<button id="mbtn" aria-label="Controls">☰ Controls</button>
+
+<div id="panel">
+  <h1>Tube Lamination Mechanism</h1>
+  <div class="sub">Concept: linear axis (ball screw) + rotary axis (servo + chuck + tailstock). All dimensions are placeholders.</div>
+  <div class="row"><label><span>Linear speed</span><span class="val" id="vLin">10 mm/s</span></label>
+    <input type="range" id="sLin" min="1" max="50" step="0.5" value="10"></div>
+  <div class="row"><label><span>Tube rotation speed</span><span class="val" id="vRpm">60 RPM</span></label>
+    <input type="range" id="sRpm" min="5" max="300" step="1" value="60"></div>
+  <div class="btns">
+    <button class="primary" id="bPlay">⏸ Pause</button>
+    <button id="bReset">⟲ Reset</button>
+  </div>
+  <table>
+    <tr><td>Helix pitch (mm/rev)</td><td class="n" id="oPitch"></td></tr>
+    <tr><td>Carriage position</td><td class="n" id="oPos"></td></tr>
+    <tr><td>Laminated length</td><td class="n" id="oLam"></td></tr>
+    <tr><td>Screw speed (5 mm lead)</td><td class="n" id="oScrew"></td></tr>
+    <tr><td>Cycle time (full stroke)</td><td class="n" id="oCycle"></td></tr>
+  </table>
+  <div class="bar"><div id="prog"></div></div>
+  <label class="chk"><input type="checkbox" id="cLoop" checked> Auto-return &amp; repeat cycle</label>
+  <label class="chk"><input type="checkbox" id="cLbl" checked> Show labels</label>
+
+  <h2>Engineering explainers</h2>
+  <button class="xbtn" data-x="0"><b>1</b>Stroke limit vs ring mount<small>Usable stroke, clearances, dead zones at the tube ends</small></button>
+  <button class="xbtn" data-x="1"><b>2</b>Live center &amp; axial preload<small>Exploded tailstock, twisting, thermal expansion</small></button>
+  <button class="xbtn" data-x="2"><b>3</b>Tube sag &amp; runout<small>3 mm ring clearance, steady rest, chuck centering</small></button>
+  <button class="xbtn" data-x="3"><b>4</b>Axis synchronization<small>Pitch formula, ramps, electronic gearing</small></button>
+  <button class="xbtn" data-x="4"><b>▶</b>Full machine cycle<small>Load · clamp · heat · laminate · return · unload</small></button>
+
+  <h2>View tools</h2>
+  <div class="row"><label><span>Explode assembly</span><span class="val" id="vExp">0%</span></label>
+    <input type="range" id="sExp" min="0" max="1" step="0.01" value="0"></div>
+  <div class="btns">
+    <button id="bXray">X-ray</button>
+    <button id="bSect">Section cut</button>
+  </div>
+  <div class="btns">
+    <button id="bBom">Parts list</button>
+    <button id="bView">Reset view</button>
+  </div>
+  <div class="note">Pitch = linear speed × 60 / RPM. Placeholders: tube Ø20×400, ring ID ≈26, stroke 350, screw lead 5 mm.<br>Drag = orbit · Wheel = zoom · Right-drag = pan · Click a part in the parts list to isolate it.</div>
+</div>
+
+<div id="bom"><h3><span>Parts list (BOM)</span><button id="bBomX">✕</button></h3><div id="bomList"></div>
+  <div class="note">Click a part to highlight &amp; isolate it. Click again to clear.</div></div>
+
+<div id="xp">
+  <div id="xpHead"><div id="xpTitle"></div><div id="xpStepNo"></div></div>
+  <div id="xpStep"></div>
+  <div id="xpText"></div>
+  <div id="xpCtl">
+    <button id="xPrev" title="Previous step">⏮</button>
+    <button id="xPlay" title="Play / pause">⏸</button>
+    <button id="xNext" title="Next step">⏭</button>
+    <button id="xReplay" title="Replay">⟲</button>
+    <div id="xpProg"><div></div></div>
+    <button id="xExit" class="wide" title="Exit explainer">✕ Exit</button>
+  </div>
+</div>
+
+<div id="hud">
+  <div id="title"><b>Tube Lamination Mechanism</b><span>Simultaneous linear + rotary motion – concept</span></div>
+  <div id="readout">
+    <div>Linear speed<b id="hLin"></b></div>
+    <div>Tube rotation<b id="hRpm"></b></div>
+    <div>Helix pitch<b id="hPitch"></b></div>
+    <div>Carriage position<b id="hPos"></b></div>
+  </div>
+  <div id="disclaimer">Placeholder dimensions · Ø20×400 tube · 350 mm stroke</div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const params = new URLSearchParams(location.search);
+const RENDER = params.has('render');
+const RENDER_X = params.has('x') ? +params.get('x') : -1;
+if (RENDER) document.body.classList.add('render');
+const MQ = matchMedia('(max-width: 760px), (max-height: 520px)');
+function mobileLayout() { const m = !RENDER && MQ.matches; document.body.classList.toggle('mobile', m); document.body.classList.toggle('landscape', m && innerWidth > innerHeight); return m; }
+const IS_MOBILE = mobileLayout();
+
+// ---------- placeholder dimensions (mm) ----------
+const D = {
+  tubeD: 20, tubeL: 400, ringID: 26, stroke: 350, screwPitch: 5,
+  baseL: 800, baseW: 120, baseH: 40,
+  railY: 60, railZ: 40, screwY: 50,
+  carL: 140, carY0: 66, carY1: 100,
+  axisY: 190,
+};
+const AX = D.axisY;
+const HALF = D.stroke / 2;               // carriage x travels -HALF..+HALF
+const TUBE_HALF = D.tubeL / 2;           // free length between holders = 400
+const TUBE_EXT = 15;                     // tube length inside each holder
+const TL = D.tubeL + 2 * TUBE_EXT;       // 430 total tube length
+const chuckFace = -TUBE_HALF, tailFace = TUBE_HALF;
+const HOUSING_T = 28;                    // ring housing axial thickness (26 + bevels)
+const CLEAR = (D.tubeL - D.stroke - HOUSING_T) / 2;  // 11 mm
+const TAU = Math.PI * 2;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => { t = clamp(t); return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; };
+const ramp = (ts, t0, t1) => ease((ts - t0) / (t1 - t0));
+
+// ---------- renderer / scene ----------
+const canvas = document.getElementById('c');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_MOBILE || devicePixelRatio < 2, powerPreference: 'high-performance', preserveDrawingBuffer: RENDER }); }
+catch (e) { document.body.insertAdjacentHTML('beforeend', '<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#fff;background:#1b1e23;font:16px sans-serif;z-index:99">WebGL is not available on this device/browser. Please try Chrome or Safari with hardware acceleration enabled.</div>'); throw e; }
+renderer.setPixelRatio(RENDER ? 1 : Math.min(devicePixelRatio, IS_MOBILE ? 1.5 : 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.localClippingEnabled = true;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.8;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1b1e23);
+scene.fog = new THREE.Fog(0x1b1e23, 2600, 5200);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(32, 16/9, 5, 20000);
+const HOME = { p: new THREE.Vector3(820, 620, 1050), t: new THREE.Vector3(-20, 130, 0) };
+camera.position.copy(HOME.p);
+const controls = new OrbitControls(camera, canvas);
+controls.target.copy(HOME.t);
+controls.enableDamping = true;
+controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+controls.zoomToCursor = !IS_MOBILE;
+controls.update();
+
+scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x2a2622, 0.5));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+sun.position.set(500, 1200, 700);
+sun.castShadow = true;
+sun.shadow.mapSize.set(IS_MOBILE ? 1024 : 2048, IS_MOBILE ? 1024 : 2048);
+Object.assign(sun.shadow.camera, { left: -700, right: 700, top: 700, bottom: -700, near: 100, far: 3000 });
+sun.shadow.bias = -0.0004;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xbfd4ff, 0.6); fill.position.set(-800, 400, -500); scene.add(fill);
+
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000),
+  new THREE.MeshStandardMaterial({ color: 0x2a2e35, roughness: 0.95, metalness: 0, envMapIntensity: 0.15 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const grid = new THREE.GridHelper(4000, 80, 0x3a404a, 0x30353d); grid.position.y = 0.2; scene.add(grid);
+
+// ---------- materials ----------
+const M = {
+  alu:   new THREE.MeshStandardMaterial({ color: 0xc0c5cc, metalness: 0.8, roughness: 0.42 }),
+  aluDk: new THREE.MeshStandardMaterial({ color: 0x9aa0a8, metalness: 0.8, roughness: 0.4 }),
+  black: new THREE.MeshStandardMaterial({ color: 0x1e2126, metalness: 0.4, roughness: 0.45 }),
+  blue:  new THREE.MeshStandardMaterial({ color: 0x2f5fa8, metalness: 0.5, roughness: 0.35 }),
+  steel: new THREE.MeshStandardMaterial({ color: 0xd4d8dc, metalness: 1.0, roughness: 0.3 }),
+  brass: new THREE.MeshStandardMaterial({ color: 0xc9a24a, metalness: 0.9, roughness: 0.3 }),
+  slot:  new THREE.MeshStandardMaterial({ color: 0x111316, metalness: 0.2, roughness: 0.8 }),
+  housing: new THREE.MeshStandardMaterial({ color: 0x4a4f57, metalness: 0.7, roughness: 0.35 }),
+  ceramic: new THREE.MeshStandardMaterial({ color: 0xd8d2c4, metalness: 0.0, roughness: 0.7 }),
+  red:   new THREE.MeshStandardMaterial({ color: 0xb02a20, metalness: 0.3, roughness: 0.5 }),
+  green: new THREE.MeshStandardMaterial({ color: 0x2f8f5a, metalness: 0.3, roughness: 0.5 }),
+  poly:  new THREE.MeshStandardMaterial({ color: 0x30343a, metalness: 0.1, roughness: 0.6 }),
+};
+for (const k in M) M[k].envMapIntensity = 0.35;
+function box(w, h, d, mat, x=0, y=0, z=0, parent=scene) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m;
+}
+function cylX(r, len, mat, x=0, y=0, z=0, parent=scene, seg=48, r2) {
+  const g = new THREE.CylinderGeometry(r2 ?? r, r, len, seg); g.rotateZ(-Math.PI/2);
+  const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m;
+}
+function ringGeo(rOut, rIn, len, a0 = 0, a1 = TAU, bevel = 1) {
+  const shape = new THREE.Shape();
+  if (a1 - a0 >= TAU - 1e-6) {
+    shape.absarc(0, 0, rOut, 0, TAU);
+    const hole = new THREE.Path(); hole.absarc(0, 0, rIn, 0, TAU, true); shape.holes.push(hole);
+  } else {
+    shape.absarc(0, 0, rOut, a0, a1, false); shape.absarc(0, 0, rIn, a1, a0, true); shape.closePath();
+  }
+  const g = new THREE.ExtrudeGeometry(shape, { depth: len, bevelEnabled: bevel > 0, bevelSize: bevel, bevelThickness: bevel, curveSegments: 48 });
+  g.translate(0, 0, -len/2); return g;
+}
+function ringX(rOut, rIn, len, mat, x=0, y=0, z=0, parent=scene) {
+  const g = ringGeo(rOut, rIn, len); g.rotateY(Math.PI/2);
+  const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m;
+}
+class Helix extends THREE.Curve {
+  constructor(r, pitch, len) { super(); this.r = r; this.p = pitch; this.len = len; }
+  getPoint(t, v = new THREE.Vector3()) {
+    const x = -this.len/2 + t*this.len, a = (x / this.p) * TAU;
+    return v.set(x, this.r*Math.cos(a), this.r*Math.sin(a));
+  }
+}
+
+// ---------- part registry ----------
+const parts = {};
+function part(name, parent, dir, meta = {}) {
+  const g = new THREE.Group(); g.name = name; parent.add(g);
+  parts[name] = { name, g, dir: new THREE.Vector3(...dir), meshes: [], ...meta }; return g;
+}
+const spinTube = [], spinCenter = [], spinScrew = [];
+
+// fixed base
+const L2 = D.baseL / 2;
+let g = part('base', scene, [0, -90, 0], { label: 'Base profile & end blocks', qty: '1', desc: 'Aluminium profile 800×120×40 with T-slots' });
+box(D.baseL, D.baseH, D.baseW, M.alu, 0, D.baseH/2, 0, g);
+for (const z of [-D.baseW/2, D.baseW/2]) for (const y of [12, 28]) box(D.baseL+0.5, 4, 2, M.slot, 0, y, z, g);
+for (const z of [-30, 0, 30]) box(D.baseL - 60, 1, 6, M.aluDk, 0, D.baseH + 0.3, z, g);
+for (const s of [-1, 1]) box(20, 55, D.baseW, M.black, s*(L2-10), D.baseH + 27.5, 0, g);
+
+g = part('rods', scene, [0, -40, 0], { label: 'Guide rods Ø12', qty: '2', desc: 'Hardened steel shafts, 780 mm' });
+const rodLen = D.baseL - 20;
+for (const z of [-D.railZ, D.railZ]) cylX(6, rodLen, M.steel, 0, D.railY, z, g, 32);
+
+g = part('screw', scene, [0, -60, 0], { label: 'Ball screw Ø16 × 5 lead', qty: '1', desc: 'With fixed/floating end bearings' });
+const screwRot = new THREE.Group(); screwRot.position.set(0, D.screwY, 0); g.add(screwRot); spinScrew.push(screwRot);
+cylX(6.3, rodLen, M.steel, 0, 0, 0, screwRot, 32);
+const thread = new THREE.Mesh(new THREE.TubeGeometry(new Helix(6.6, D.screwPitch, rodLen), Math.round(rodLen / D.screwPitch * 14), 1.35, 6, false), M.steel);
+thread.castShadow = true; screwRot.add(thread);
+for (const s of [-1, 1]) cylX(11, 14, M.brass, s*(L2-28), D.screwY, 0, g, 32);
+
+g = part('linMotor', scene, [-140, -60, 0], { label: 'Linear-axis motor + coupling', qty: '1', desc: 'NEMA 23 stepper / servo, drives the screw' });
+const linMotor = new THREE.Group(); linMotor.position.set(-L2 - 6, D.screwY, 0); g.add(linMotor);
+box(10, 57, 57, M.aluDk, -5, 0, 0, linMotor);
+box(76, 56, 56, M.black, -48, 0, 0, linMotor);
+box(10, 57, 57, M.aluDk, -91, 0, 0, linMotor);
+box(14, 18, 22, M.black, -60, 34, 0, linMotor);
+const coupling = cylX(10, 22, M.aluDk, 6, 0, 0, linMotor, 24); spinScrew.push(coupling);
+
+// heated ring (fixed)
+g = part('ring', scene, [0, 230, 0], { label: 'Heating ring', qty: '1', desc: 'Housing, ceramic insulator, heating element; ID ≈26' });
+const ringGrp = new THREE.Group(); ringGrp.position.set(0, AX, 0); g.add(ringGrp);
+ringX(46, 22, 26, M.housing, 0, 0, 0, ringGrp);
+ringX(22, 16.5, 22, M.ceramic, 0, 0, 0, ringGrp);
+const heatMat = new THREE.MeshStandardMaterial({ color: 0x401000, emissive: 0xff4a00, emissiveIntensity: 10, roughness: 0.6 });
+heatMat.userData.noClone = true;
+const heater = new THREE.Mesh(new THREE.TorusGeometry(D.ringID/2 + 2.6, 2.6, 24, 96), heatMat); heater.rotation.y = Math.PI/2; ringGrp.add(heater);
+for (const dx of [-7, 7]) { const t = new THREE.Mesh(new THREE.TorusGeometry(D.ringID/2 + 3.5, 1.6, 16, 96), heatMat); t.rotation.y = Math.PI/2; t.position.x = dx; ringGrp.add(t); }
+const heatLight = new THREE.PointLight(0xff6a20, 1800, 260, 2); ringGrp.add(heatLight);
+
+// split (clamshell) ring option
+g = part('ringHalves', scene, [0, 230, 0], { optional: true, label: 'Clamshell heater (option)', qty: '1', desc: 'Split ring that opens for loading' });
+const halves = [];
+for (const s of [-1, 1]) {
+  const h = new THREE.Group(); h.position.set(0, AX, 0); g.add(h); halves.push({ h, s });
+  const hg = ringGeo(46, 22, 26, -Math.PI/2, Math.PI/2); hg.rotateY(s * Math.PI/2);
+  const hm = new THREE.Mesh(hg, M.housing); hm.castShadow = true; h.add(hm);
+  const tg = new THREE.TorusGeometry(D.ringID/2 + 2.6, 2.6, 16, 48, Math.PI); tg.rotateZ(-Math.PI/2); tg.rotateY(s * Math.PI/2);
+  h.add(new THREE.Mesh(tg, heatMat));
+}
+
+// ring mount
+const colZ = -D.baseW/2 - 45, armY = 330;
+g = part('mount', scene, [0, 250, -140], { label: 'Ring mount', qty: '1', desc: 'Column, arm and drop plate – fixed to frame' });
+box(60, 6, 90, M.black, 0, 3, colZ, g);
+box(40, armY + 20, 40, M.alu, 0, (armY + 20)/2, colZ, g);
+box(40, 30, -colZ + 20, M.alu, 0, armY, colZ/2 + 10, g);
+box(12, armY - AX - 40, 50, M.aluDk, 0, (armY + AX + 40)/2 - 15, 0, g);
+box(30, 10, 60, M.aluDk, 0, AX + 48, 0, g);
+g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+  new THREE.Vector3(10, AX + 52, 20), new THREE.Vector3(30, AX + 90, 40),
+  new THREE.Vector3(25, armY - 25, colZ + 30), new THREE.Vector3(22, armY - 60, colZ + 10)]), 40, 3, 8), M.red));
+
+// steady rest B (fixed next to ring, cold side) – option
+const REST_B_X = -35;
+g = part('restB', scene, [0, 230, 80], { optional: true, label: 'Ring-side steady rest (option)', qty: '1', desc: '3 rollers on the cold side of the ring' });
+ringX(42, 30, 10, M.green, REST_B_X, AX, 0, g);
+box(Math.abs(REST_B_X) - 5, 12, 30, M.green, REST_B_X/2 - 3, AX + 52, 0, g);
+box(10, 16, 30, M.green, REST_B_X, AX + 44, 0, g);
+for (const a of [Math.PI/2, Math.PI/2 + TAU/3, Math.PI/2 + 2*TAU/3]) {
+  const y = Math.sin(a), z = Math.cos(a);
+  cylX(6, 12, M.poly, REST_B_X, AX + 16*y, 16*z, g, 24);
+  const arm = box(6, 12, 6, M.aluDk, REST_B_X, AX + 26*y, 26*z, g); arm.rotation.x = -a + Math.PI/2;
+}
+
+// ---------- moving carriage ----------
+const car = new THREE.Group(); scene.add(car);
+const carH = D.carY1 - D.carY0;
+g = part('carriage', car, [0, 0, 0], { label: 'Carriage + ball nut', qty: '1', desc: 'Linear bearings on the rods, ball nut on the screw' });
+box(D.carL, carH, 110, M.black, 0, D.carY0 + carH/2, 0, g);
+for (const z of [-D.railZ, D.railZ]) cylX(11, D.carL - 10, M.aluDk, 0, D.railY, z, g, 32);
+cylX(14, 30, M.brass, 0, D.screwY, 0, g, 32);
+box(10, 40, 50, M.brass, -18, D.screwY + 2, 0, g);
+
+const plateY = D.carY1 + 6, plateX0 = -345, plateX1 = 255, PLATE_TOP = plateY + 6;
+g = part('plate', car, [0, 50, 0], { label: 'Rotation frame plate', qty: '1', desc: 'Carries headstock & tailstock' });
+box(plateX1 - plateX0, 12, 100, M.alu, (plateX0 + plateX1)/2, plateY, 0, g);
+for (const z of [-30, 30]) box(plateX1 - plateX0 - 10, 2, 4, M.slot, (plateX0 + plateX1)/2, plateY + 6.5, z, g);
+
+const upTop = AX + 45, upH = upTop - PLATE_TOP;
+g = part('headstock', car, [-40, 110, 0], { label: 'Headstock upright + bearing', qty: '1', desc: 'Supports the chuck spindle' });
+box(20, upH, 90, M.alu, chuckFace - 42, PLATE_TOP + upH/2, 0, g);
+for (const z of [-38, 38]) box(30, 40, 8, M.aluDk, chuckFace - 67, PLATE_TOP + 20, z, g);
+cylX(26, 24, M.housing, chuckFace - 45, AX, 0, g, 48);
+
+g = part('servo', car, [-160, 110, 0], { label: 'Rotary servo motor', qty: '1', desc: 'Rotates the tube (axis A)' });
+const servo = new THREE.Group(); servo.position.set(chuckFace - 57, AX, 0); g.add(servo);
+box(10, 64, 64, M.aluDk, -5, 0, 0, servo);
+box(95, 60, 60, M.black, -57, 0, 0, servo);
+cylX(26, 22, M.blue, -116, 0, 0, servo, 40);
+box(20, 16, 26, M.black, -80, 38, 0, servo);
+
+g = part('chuck', car, [-70, 200, 0], { label: '3-jaw chuck', qty: '1', desc: 'Self-centering, grips the tube end (15 mm)' });
+const chuckSpin = new THREE.Group(); chuckSpin.position.set(0, AX, 0); g.add(chuckSpin); spinTube.push(chuckSpin);
+cylX(30, 22, M.aluDk, chuckFace - 22, 0, 0, chuckSpin, 48);
+cylX(18, 6, M.steel, chuckFace - 33, 0, 0, chuckSpin, 32);
+const jaws = [];
+for (let i = 0; i < 3; i++) {
+  const j = new THREE.Group(); j.rotation.x = i * TAU / 3; chuckSpin.add(j);
+  jaws.push(box(16, 12, 9, M.black, chuckFace - 8, 16, 0, j));
+}
+
+// tailstock (static part of it)
+const TS = tailFace + 42;   // upright centre x = 242
+g = part('tailstock', car, [50, 110, 0], { label: 'Tailstock upright, housing & slide clamp', qty: '1', desc: 'Adjustable along the plate for tube length' });
+const tsHousing = [];
+box(80, 10, 96, M.aluDk, TS, PLATE_TOP + 5, 0, g);                                   // slide block
+box(20, upH - 10, 90, M.alu, TS, PLATE_TOP + 10 + (upH - 10)/2, 0, g);
+for (const z of [-38, 38]) box(30, 40, 8, M.aluDk, TS + 25, PLATE_TOP + 30, z, g);
+tsHousing.push(ringX(24, 15.5, 60, M.housing, 238, AX, 0, g));
+box(14, 14, 10, M.red, TS, PLATE_TOP + 12, 53, g);                                    // clamp body
+const lever = cylX(3, 40, M.red, TS + 18, PLATE_TOP + 20, 58, g, 12); lever.rotation.z = 0.5;
+
+// quill (axially movable)  – rotating cup & spindle
+g = part('quill', car, [20, 200, 0], { label: 'Live-center quill (cup + spindle)', qty: '1', desc: 'Rotates with the tube on its own bearings' });
+const quillG = new THREE.Group(); quillG.position.set(0, AX, 0); g.add(quillG);
+const quillSpin = new THREE.Group(); quillG.add(quillSpin); spinCenter.push(quillSpin);
+cylX(14, 14, M.steel, tailFace + 7, 0, 0, quillSpin, 40, 11);
+cylX(8, 54, M.steel, tailFace + 41, 0, 0, quillSpin, 32);
+box(4, 3, 16, M.slot, tailFace + 30, 8, 0, quillSpin);                                // visible key for rotation
+
+g = part('bearings', car, [80, 240, 0], { label: 'Quill bearings', qty: '2', desc: 'Angular-contact pair, carry radial + axial load' });
+const bearG = new THREE.Group(); bearG.position.set(0, AX, 0); g.add(bearG);
+for (const x of [222, 254]) {
+  ringX(15, 12.5, 7, M.steel, x, 0, 0, bearG);
+  ringX(10.5, 8, 7, M.steel, x, 0, 0, bearG);
+  const balls = new THREE.Mesh(new THREE.TorusGeometry(11.5, 2.2, 10, 40), M.brass); balls.rotation.y = Math.PI/2; balls.position.x = x; bearG.add(balls);
+}
+
+g = part('spring', car, [120, 200, 0], { label: 'Axial preload spring', qty: '1', desc: 'Keeps constant axial force, absorbs ΔL' });
+const SPRING_BACK = 292, SPRING_FRONT0 = 268;
+const spring = new THREE.Mesh(new THREE.TubeGeometry(new Helix(7, 3.4, 24), 160, 1.3, 8, false), new THREE.MeshStandardMaterial({ color: 0x5fb0ff, metalness: 0.7, roughness: 0.35 }));
+spring.position.set((SPRING_FRONT0 + SPRING_BACK)/2, AX, 0); g.add(spring);
+
+g = part('pneu', car, [190, 200, 0], { label: 'Pneumatic quill cylinder', qty: '1', desc: 'Preload / retract for loading' });
+cylX(15, 50, M.aluDk, 318, AX, 0, g, 40);
+cylX(15.5, 6, M.red, 346, AX, 0, g, 40);
+cylX(15.5, 6, M.black, 296, AX, 0, g, 40);
+box(8, 8, 8, M.brass, 330, AX + 17, 0, g); box(8, 8, 8, M.brass, 305, AX + 17, 0, g);
+
+// travelling steady rest A (option, on carriage)
+const REST_A_X = -110;
+g = part('restA', car, [0, 60, 120], { optional: true, label: 'Travelling steady rest (option)', qty: '1', desc: 'V-rollers riding on the carriage' });
+const restA = new THREE.Group(); g.add(restA);
+box(20, AX - 28 - PLATE_TOP, 40, M.green, REST_A_X, PLATE_TOP + (AX - 28 - PLATE_TOP)/2, 0, restA);
+box(20, 12, 46, M.green, REST_A_X, AX - 22, 0, restA);
+for (const s of [-1, 1]) cylX(6, 16, M.poly, REST_A_X, AX - 16*Math.SQRT1_2, s*16*Math.SQRT1_2, restA, 24);
+
+// ---------- tube (deformable) ----------
+function tubeTexture() {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 1024; const g = c.getContext('2d');
+  g.fillStyle = '#aeb5be'; g.fillRect(0, 0, 512, 1024);
+  g.fillStyle = '#c4202a'; g.fillRect(0, 0, 60, 1024);
+  g.fillStyle = '#2a64c4'; g.fillRect(256, 0, 18, 1024);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+function lamTexture() {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = '#d4892e'; g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = '#8a4a12'; g.lineWidth = 14;
+  for (const o of [-256, 0, 256]) { g.beginPath(); g.moveTo(o, 0); g.lineTo(o + 256, 256); g.stroke(); }
+  g.strokeStyle = 'rgba(255,225,170,.55)'; g.lineWidth = 5;
+  for (const o of [-256, 0, 256]) { g.beginPath(); g.moveTo(o + 22, 0); g.lineTo(o + 278, 256); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t;
+}
+g = part('tube', car, [0, 200, 0], { label: 'Tube Ø20×400 (workpiece)', qty: '1', desc: '430 mm incl. 2×15 mm held in chuck / center' });
+const tubeSpin = new THREE.Group(); tubeSpin.position.set(0, AX, 0); g.add(tubeSpin); spinTube.push(tubeSpin);
+function deformable(r, len, seg) {
+  const geo = new THREE.CylinderGeometry(r, r, len, 48, seg, true); geo.rotateZ(-Math.PI/2);
+  return { geo, orig: geo.attributes.position.array.slice(), active: false };
+}
+const tubeDef = deformable(D.tubeD/2, TL, 120);
+const tube = new THREE.Mesh(tubeDef.geo, new THREE.MeshStandardMaterial({ map: tubeTexture(), metalness: 0.1, roughness: 0.55, side: THREE.DoubleSide }));
+tube.castShadow = true; tubeSpin.add(tube);
+const lamPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
+const sectionPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 1e6);
+const lamTex = lamTexture();
+const lamDef = deformable(D.tubeD/2 + 0.7, D.stroke, 100);
+const lamMat = new THREE.MeshStandardMaterial({ map: lamTex, metalness: 0.1, roughness: 0.3, clippingPlanes: [lamPlane, sectionPlane], side: THREE.DoubleSide });
+lamMat.userData.noClone = true;
+const lam = new THREE.Mesh(lamDef.geo, lamMat); lam.castShadow = true; tubeSpin.add(lam);
+function setLamPitch(p) { lamTex.repeat.set(1, D.stroke / Math.max(p, 0.5)); }
+
+g = part('mandrel', car, [0, 260, 0], { optional: true, label: 'Internal mandrel (option)', qty: '1', desc: 'Supports the tube from inside' });
+const mandrelSpin = new THREE.Group(); mandrelSpin.position.set(0, AX, 0); g.add(mandrelSpin); spinTube.push(mandrelSpin);
+cylX(7.5, TL + 60, M.steel, 0, 0, 0, mandrelSpin, 32);
+
+// collect meshes, clone materials per mesh so each part can be highlighted / ghosted
+for (const p of Object.values(parts)) {
+  p.base = p.g.position.clone();
+  p.g.traverse(o => {
+    if (!o.isMesh) return;
+    if (!o.material.userData.noClone) {
+      o.material = o.material.clone();
+      o.material.side = THREE.DoubleSide;
+      o.material.clippingPlanes = [sectionPlane];
+    }
+    const m = o.material;
+    o.userData.b = { em: m.emissive ? m.emissive.clone() : null, ei: m.emissiveIntensity ?? 1, op: m.opacity };
+    p.meshes.push(o);
+  });
+}
+heatMat.clippingPlanes = [sectionPlane];
+
+// ---------- post-processing ----------
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(1280, 720), 0.9, 0.5, 2.5));
+composer.addPass(new OutputPass());
+
+// ---------- deformation of tube / laminate ----------
+function deformGeo(def, d, angle) {
+  const need = !!d;
+  if (!need && !def.active) return;
+  const pos = def.geo.attributes.position.array, o = def.orig;
+  if (!need) { pos.set(o); def.active = false; def.geo.attributes.position.needsUpdate = true; def.geo.computeVertexNormals(); return; }
+  def.active = true;
+  const c = Math.cos(angle), s = Math.sin(angle);
+  // world "down" (0,-1,0) expressed in spinning frame
+  const dy = -c, dz = s;
+  const tw = d.twist || 0, st = d.stretch || 0, sag = d.sag || 0, wh = d.whirl || 0, bk = d.buckle || 0;
+  for (let i = 0; i < o.length; i += 3) {
+    let x = o[i], y = o[i+1], z = o[i+2];
+    const u = clamp((x + TL/2) / TL);
+    if (tw) { const a = tw * u, ca = Math.cos(a), sa = Math.sin(a); const y2 = y*ca - z*sa; z = y*sa + z*ca; y = y2; }
+    const b = Math.sin(Math.PI * u);
+    if (sag) { y += dy * sag * b; z += dz * sag * b; }
+    if (wh) { y += wh * b; }
+    if (bk) { y += -dy * bk * b; z += -dz * bk * b; }
+    pos[i] = x + st * u; pos[i+1] = y; pos[i+2] = z;
+  }
+  def.geo.attributes.position.needsUpdate = true; def.geo.computeVertexNormals();
+}
+
+// ---------- UI state ----------
+const UI = { explode: 0, xray: false, section: false, isolate: null, labels: true };
+
+// ---------- pose / commit ----------
+function defP() {
+  return { xc: -HALF, angle: 0, centerAngle: null, explode: 0, off: {}, hl: {}, op: {}, focus: null, ghost: 0.12,
+           xray: false, section: false, show: {}, hide: {}, lam: true, lamX: 1e5, pitch: 30, deform: null,
+           jaw: 0, quillX: 0, heat: 1, split: 0, tubeLift: [0, 0, 0], restADown: 0 };
+}
+const HL = new THREE.Color(), tmpC = new THREE.Color();
+function commit(P) {
+  car.position.x = P.xc;
+  for (const s of spinTube) s.rotation.x = P.angle;
+  for (const s of spinCenter) s.rotation.x = P.centerAngle ?? P.angle;
+  const sa = (P.xc + HALF) / D.screwPitch * TAU;
+  for (const s of spinScrew) s.rotation.x = sa;
+  for (const p of Object.values(parts)) {
+    const o = P.off[p.name];
+    p.g.position.copy(p.base).addScaledVector(p.dir, P.explode);
+    if (o) p.g.position.add(new THREE.Vector3(...o));
+    p.g.visible = p.optional ? !!P.show[p.name] : !P.hide[p.name];
+    for (const m of p.meshes) {
+      const mat = m.material; if (mat.userData.noClone) continue;
+      const b = m.userData.b, hl = P.hl[p.name];
+      let op = b.op;
+      if (P.op[p.name] != null) op = P.op[p.name];
+      else if (P.focus && !P.focus.includes(p.name)) op = P.ghost;
+      else if (P.xray && !hl) op = 0.28;
+      const tr = op < 0.999;
+      if (mat.transparent !== tr) { mat.transparent = tr; mat.depthWrite = !tr; mat.needsUpdate = true; }
+      mat.opacity = op;
+      if (b.em) {
+        if (hl != null) { mat.emissive.set(hl); mat.emissiveIntensity = 0.22; }
+        else { mat.emissive.copy(b.em); mat.emissiveIntensity = b.ei; }
+      }
+    }
+  }
+  parts.tube.g.position.add(new THREE.Vector3(...P.tubeLift));
+  parts.mandrel.g.position.add(new THREE.Vector3(...P.tubeLift));
+  // laminate
+  lam.visible = P.lam; lamPlane.constant = -P.lamX; setLamPitch(P.pitch);
+  const tubeOp = P.op.tube ?? (P.focus && !P.focus.includes('tube') ? P.ghost : (P.xray && P.hl.tube == null ? 0.28 : 1));
+  if (lamMat.transparent !== tubeOp < 1) { lamMat.transparent = tubeOp < 1; lamMat.depthWrite = !(tubeOp < 1); lamMat.needsUpdate = true; }
+  lamMat.opacity = tubeOp;
+  // deform
+  deformGeo(tubeDef, P.deform, P.angle); deformGeo(lamDef, P.deform, P.angle);
+  // chuck jaws, quill, spring
+  for (const j of jaws) j.position.y = 16 + P.jaw * 10;
+  quillG.position.x = P.quillX; bearG.position.x = P.quillX;
+  const front = SPRING_FRONT0 + P.quillX;
+  spring.position.x = (front + SPRING_BACK)/2; spring.scale.x = Math.max(0.2, (SPRING_BACK - front) / 24);
+  // heater & split ring
+  const split = P.split > 0.001;
+  for (const m of parts.ring.meshes) m.visible = !split;
+  parts.ringHalves.g.visible = split;
+  for (const { h, s } of halves) h.position.z = s * P.split * 70;
+  heatMat.emissiveIntensity = 10 * P.heat;
+  heatLight.intensity = 1800 * P.heat * (0.94 + 0.06 * Math.sin(performance.now() * 0.004));
+  restA.position.y = -P.restADown;
+  sectionPlane.constant = (P.section || UI.section) ? 0 : 1e6;
+}
+
+// ---------- labels ----------
+const lblRoot = document.getElementById('labels'), svg = document.getElementById('lines');
+const v3 = new THREE.Vector3();
+function makeLabel(text, obj, local, dx, dy, cls = '') {
+  const el = document.createElement('div'); el.className = 'lbl ' + cls; el.innerHTML = text; lblRoot.appendChild(el);
+  const col = { hot: '#ff7a2a', lam: '#e0a040', dim: '#3fc6ff', warn: '#ff4d4d', ok: '#4dff88', note: '#ffd24d' }[cls] || 'rgba(255,255,255,.55)';
+  const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line'); ln.setAttribute('stroke', col); ln.setAttribute('stroke-width', '1.2');
+  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); dot.setAttribute('r', '3'); dot.setAttribute('fill', col);
+  svg.appendChild(ln); svg.appendChild(dot);
+  return { el, ln, dot, obj, local: new THREE.Vector3(...local), dx, dy, visible: true, alpha: 1, leader: !(dx === 0 && dy === 0) };
+}
+function placeLabel(L, show) {
+  const vis = show && L.visible && L.alpha > 0.01 && (!L.obj || L.obj.visible !== false);
+  L.el.style.display = vis ? '' : 'none'; L.ln.style.display = L.dot.style.display = (vis && L.leader) ? '' : 'none';
+  if (!vis) return;
+  const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
+  if (L.obj) { L.obj.updateWorldMatrix(true, false); v3.copy(L.local).applyMatrix4(L.obj.matrixWorld); } else v3.copy(L.local);
+  v3.project(camera);
+  if (v3.z > 1) { L.el.style.display = 'none'; L.ln.style.display = L.dot.style.display = 'none'; return; }
+  const x = (v3.x * 0.5 + 0.5) * w, y = (-v3.y * 0.5 + 0.5) * h, lx = x + L.dx, ly = y + L.dy;
+  L.el.style.left = lx + 'px'; L.el.style.top = ly + 'px'; L.el.style.opacity = L.alpha;
+  L.ln.setAttribute('x1', x); L.ln.setAttribute('y1', y); L.ln.setAttribute('x2', lx); L.ln.setAttribute('y2', ly);
+  L.dot.setAttribute('cx', x); L.dot.setAttribute('cy', y); L.ln.style.opacity = L.dot.style.opacity = L.alpha;
+}
+function removeLabel(L) { L.el.remove(); L.ln.remove(); L.dot.remove(); }
+const P_ = n => parts[n].g;
+const staticLabels = [
+  makeLabel('Stepper/servo motor – linear axis', P_('linMotor'), [-L2 - 56, D.screwY + 30, 0], -60, -40),
+  makeLabel('Ball screw, 5 mm lead', P_('screw'), [250, D.screwY, 0], 70, 75),
+  makeLabel('Ø12 guide rods', P_('rods'), [360, D.railY, D.railZ], 100, -45),
+  makeLabel('Carriage on ball nut', P_('carriage'), [40, D.carY0 + 10, 55], -110, 100),
+  makeLabel('Servo motor – tube rotation', P_('servo'), [chuckFace - 117, AX + 30, 0], -70, -60),
+  makeLabel('Chuck – grips tube end', P_('chuck'), [chuckFace - 15, AX + 30, 0], -20, -150),
+  makeLabel('Tailstock + rotating live center', P_('tailstock'), [tailFace + 30, AX - 20, 0], 110, 60),
+  makeLabel('Heating ring – fixed to frame', P_('ring'), [0, AX - 30, 30], -130, 90, 'hot'),
+  makeLabel('Ring mount (between holders)', P_('mount'), [0, armY, colZ + 10], 70, -30),
+  makeLabel('Tube Ø20×400', P_('tube'), [-110, AX + 10, 0], -40, -55),
+];
+const lamLbl = makeLabel('Laminated section (helical)', null, [60, AX + 10, 0], 60, -60, 'lam');
+staticLabels.push(lamLbl);
+
+// ---------- overlay helpers (explainer graphics) ----------
+const OV = { objs: [], labels: [], mats: [] };
+function ovMat(color, opts = {}) {
+  const m = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: opts.opacity ?? 1, depthTest: opts.depthTest ?? false, depthWrite: false, side: THREE.DoubleSide });
+  m.userData.op = opts.opacity ?? 1; m.userData.delay = opts.delay ?? 0; OV.mats.push(m); return m;
+}
+function ovAdd(obj, parent = scene) { obj.renderOrder = 999; parent.add(obj); OV.objs.push(obj); return obj; }
+function ovLabel(text, obj, local, dx = 0, dy = 0, cls = 'dim', delay = 0) {
+  const L = makeLabel(text, obj, local, dx, dy, cls); L.delay = delay; OV.labels.push(L); return L;
+}
+function clearOverlay() {
+  for (const o of OV.objs) { o.parent && o.parent.remove(o); o.traverse(c => { if (c.geometry) c.geometry.dispose(); }); }
+  for (const m of OV.mats) m.dispose();
+  for (const L of OV.labels) removeLabel(L);
+  OV.objs = []; OV.labels = []; OV.mats = [];
+}
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
+function segMesh(a, b, r, mat) {
+  _a.set(...a); _b.set(...b);
+  const len = _a.distanceTo(_b); const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 10), mat);
+  m.position.copy(_a).add(_b).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(_up, _b.clone().sub(_a).normalize()); return m;
+}
+function coneMesh(at, dirFrom, r, h, mat) {
+  _a.set(...at); _b.set(...dirFrom);
+  const dir = _a.clone().sub(_b).normalize();
+  const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, 16), mat);
+  m.position.copy(_a).addScaledVector(dir, -h/2); m.quaternion.setFromUnitVectors(_up, dir); return m;
+}
+function dim(parent, a, b, text, o = {}) {
+  const col = o.color ?? 0x3fc6ff, mat = ovMat(col, { delay: o.delay });
+  const grp = new THREE.Group();
+  const L = Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]), hh = Math.min(8, L/3), rr = hh/3;
+  grp.add(segMesh(a, b, 0.7, mat), coneMesh(a, b, rr, hh, mat), coneMesh(b, a, rr, hh, mat));
+  if (o.extA) grp.add(segMesh(o.extA, a, 0.4, mat));
+  if (o.extB) grp.add(segMesh(o.extB, b, 0.4, mat));
+  ovAdd(grp, parent);
+  const mid = a.map((v, i) => (v + b[i]) / 2);
+  ovLabel(text, parent, mid, o.dx ?? 0, o.dy ?? 0, o.cls ?? 'dim', o.delay ?? 0);
+  return grp;
+}
+function arrow(parent, from, to, color, o = {}) {
+  const mat = ovMat(color, { delay: o.delay }); const grp = new THREE.Group();
+  const r = o.r ?? 1.6; _a.set(...from); _b.set(...to);
+  const dir = _b.clone().sub(_a).normalize(), h = o.head ?? 14;
+  const shaftEnd = _b.clone().addScaledVector(dir, -h);
+  grp.add(segMesh(from, shaftEnd.toArray(), r, mat), coneMesh(to, from, r * 3.2, h, mat));
+  return ovAdd(grp, parent);
+}
+function arcArrow(parent, center, radius, a0, a1, color, o = {}) {
+  const mat = ovMat(color, { delay: o.delay }); const grp = new THREE.Group();
+  const pts = []; const n = 40;
+  for (let i = 0; i <= n; i++) { const a = lerp(a0, a1, i / n); pts.push(new THREE.Vector3(center[0], center[1] + radius * Math.cos(a), center[2] + radius * Math.sin(a))); }
+  grp.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 60, o.r ?? 1.8, 8), mat));
+  const end = pts[n], prev = pts[n - 2];
+  grp.add(coneMesh(end.toArray(), prev.toArray(), (o.r ?? 1.8) * 3.4, 14, mat));
+  return ovAdd(grp, parent);
+}
+function sleeve(parent, x0, x1, r, color, opacity = 0.55, delay = 0) {
+  const mat = ovMat(color, { opacity, depthTest: true, delay });
+  const m = cylX(r, x1 - x0, mat, (x0 + x1) / 2, AX, 0, parent, 48); m.castShadow = m.receiveShadow = false;
+  OV.objs.push(m); m.renderOrder = 5; return m;
+}
+function updateOverlay(ts) {
+  for (const m of OV.mats) m.opacity = m.userData.op * clamp((ts - m.userData.delay) / 0.5);
+  for (const L of OV.labels) { L.alpha = clamp((ts - (L.delay || 0)) / 0.5); placeLabel(L, true); }
+}
+
+// ---------- inset canvas ----------
+const inset = document.getElementById('inset'), ictx = inset.getContext('2d');
+function showInset(on) { inset.style.display = on ? 'block' : 'none'; }
+
+// ======================================================================
+//  Motion profiles for the synchronisation explainer (time-scaled ×2)
+// ======================================================================
+function makeProfile(kind) {
+  const V = 60, N = 120, p = V * 60 / N, dt = 1 / 240;
+  const Ta = kind === 'mis' ? 0.3 : 0.8, TaR = kind === 'mis' ? 1.6 : 0.8;
+  const tc = (D.stroke - V * Ta) / V, T1 = 2 * Ta + tc;
+  const v = t => t < Ta ? V * t / Ta : t < Ta + tc ? V : t < T1 ? V * (T1 - t) / Ta : 0;
+  const n = kind === 'mis'
+    ? (t => t < TaR ? N * t / TaR : t < Ta + tc ? N : N * Math.max(0, (Ta + tc + TaR - t) / TaR))
+    : (t => v(t) * 60 / p);
+  const Tend = kind === 'mis' ? Math.max(T1, Ta + tc + TaR) : T1;
+  const T = [], X = [], A = [], Vv = [], Nn = [];
+  let x = 0, a = 0;
+  for (let t = 0; t <= Tend + 1e-9; t += dt) {
+    T.push(t); X.push(x); A.push(a); Vv.push(v(t)); Nn.push(n(t));
+    x += v(t + dt/2) * dt; a += n(t + dt/2) / 60 * TAU * dt;
+  }
+  const at = t => { const i = clamp(Math.floor(t / dt), 0, T.length - 1); return i; };
+  return { kind, V, N, p, T, X, A, Vv, Nn, Tend, dt, at };
+}
+const PROF = { mis: makeProfile('mis'), gear: makeProfile('gear') };
+
+class SampleCurve extends THREE.Curve {
+  constructor(pts) { super(); this.pts = pts; }
+  getPoint(t, v = new THREE.Vector3()) {
+    const n = this.pts.length - 1, f = clamp(t) * n, i = Math.min(n - 1, Math.floor(f)), k = f - i;
+    return v.copy(this.pts[i]).lerp(this.pts[i + 1], k);
+  }
+  getPointAt(u, v) { return this.getPoint(u, v); }
+  getTangentAt(u, v) { return this.getTangent(u, v); }
+}
+function buildRibbon(prof, color = 0xc8701e) {
+  const pts = [], times = []; const r = D.tubeD/2 + 0.9;
+  let last = null;
+  for (let i = 0; i < prof.T.length; i++) {
+    const lx = -(-HALF + prof.X[i]), th = prof.A[i];
+    const p = new THREE.Vector3(lx, r * Math.cos(-th), r * Math.sin(-th));
+    if (!last || p.distanceTo(last) > 0.6) { pts.push(p); times.push(prof.T[i]); last = p; }
+  }
+  const geo = new THREE.TubeGeometry(new SampleCurve(pts), pts.length - 1, 1.6, 6, false);
+  const mat = new THREE.MeshStandardMaterial({ color, emissive: 0x3a1a00, metalness: 0.1, roughness: 0.4, clippingPlanes: [sectionPlane] });
+  const m = new THREE.Mesh(geo, mat); m.castShadow = true;
+  tubeSpin.add(m); OV.objs.push(m);
+  return { m, times, segs: pts.length - 1, show(t) {
+    let lo = 0, hi = this.times.length - 1; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (this.times[mid] <= t) lo = mid; else hi = mid - 1; }
+    geo.setDrawRange(0, lo * 6 * 6);
+  } };
+}
+function drawPlots(prof, tNow, label) {
+  const c = ictx, W = inset.width, H = inset.height; c.clearRect(0, 0, W, H);
+  c.fillStyle = 'rgba(10,14,20,.0)'; c.fillRect(0, 0, W, H);
+  c.font = '600 13px Rubik, Arial'; c.fillStyle = '#e8ecf1'; c.fillText(label, 14, 20);
+  const x0 = 46, x1 = W - 14, tx = t => x0 + (x1 - x0) * t / Math.max(prof.Tend, 7.2);
+  const panel = (y0, y1, title) => {
+    c.strokeStyle = 'rgba(255,255,255,.15)'; c.lineWidth = 1; c.strokeRect(x0, y0, x1 - x0, y1 - y0);
+    c.font = '11px Rubik, Arial'; c.fillStyle = '#8b96a3'; c.fillText(title, x0 + 4, y0 + 12);
+  };
+  const line = (arr, map, color, y0, y1, dash) => {
+    c.strokeStyle = color; c.lineWidth = 2; c.setLineDash(dash || []); c.beginPath();
+    for (let i = 0; i < arr.length; i += 4) { const y = y1 - (y1 - y0) * clamp(map(arr[i], i)); i ? c.lineTo(tx(prof.T[i]), y) : c.moveTo(tx(prof.T[i]), y); }
+    c.stroke(); c.setLineDash([]);
+  };
+  panel(30, 135, 'speed (normalised)');
+  line(prof.Vv, v => v / prof.V * 0.85, '#3fa6ff', 30, 135);
+  line(prof.Nn, n => n / prof.N * 0.85, '#ff8a3a', 30, 135, [6, 4]);
+  c.font = '11px Rubik, Arial'; c.fillStyle = '#3fa6ff'; c.fillText('linear v', x1 - 120, 44); c.fillStyle = '#ff8a3a'; c.fillText('rotary n', x1 - 60, 44);
+  panel(150, 245, 'pitch p = v·60/n  [mm/rev]');
+  const pm = 90;
+  c.strokeStyle = 'rgba(77,255,136,.6)'; c.setLineDash([3, 3]); c.beginPath(); const yn = 245 - 95 * (prof.p / pm); c.moveTo(x0, yn); c.lineTo(x1, yn); c.stroke(); c.setLineDash([]);
+  c.fillStyle = '#4dff88'; c.fillText('target 30', x1 - 62, yn - 4);
+  line(prof.Vv, (v, i) => { const n = prof.Nn[i]; if (v < 0.5 && n < 0.5) return 0; return n < 0.5 ? 1 : (v * 60 / n) / pm; }, '#ffd24d', 150, 245);
+  c.fillStyle = '#8b96a3'; c.font = '10px Rubik, Arial';
+  for (const s of [0, 2, 4, 6]) c.fillText(s + ' s', tx(s) - 6, H - 4);
+  if (tNow != null) { c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(tx(tNow), 30); c.lineTo(tx(tNow), 245); c.stroke(); }
+}
+function drawRingSection(sagMm, whirlMm, whirlAng, note) {
+  const c = ictx, W = inset.width, H = inset.height; c.clearRect(0, 0, W, H);
+  const cx = 200, cy = 140, s = 8;
+  c.font = '600 13px Rubik, Arial'; c.fillStyle = '#e8ecf1'; c.fillText('Section through the ring (looking along the axis)', 14, 20);
+  c.fillStyle = '#4a4f57'; c.beginPath(); c.arc(cx, cy, 118, 0, TAU); c.arc(cx, cy, 13 * s + 10, 0, TAU, true); c.fill();
+  c.fillStyle = '#d8d2c4'; c.beginPath(); c.arc(cx, cy, 13 * s + 10, 0, TAU); c.arc(cx, cy, 13 * s, 0, TAU, true); c.fill();
+  c.strokeStyle = '#ff5a10'; c.lineWidth = 3; c.beginPath(); c.arc(cx, cy, 13 * s + 2, 0, TAU); c.stroke();
+  const ox = whirlMm * Math.sin(whirlAng), oy = -(whirlMm * Math.cos(whirlAng)) + sagMm;
+  const off = Math.hypot(ox, oy), gap = 3 - off, contact = gap <= 0;
+  c.fillStyle = contact ? '#c43030' : '#aeb5be'; c.beginPath(); c.arc(cx + ox * s, cy + oy * s, 10 * s, 0, TAU); c.fill();
+  c.fillStyle = '#1b1e23'; c.beginPath(); c.arc(cx + ox * s, cy + oy * s, 8.5 * s, 0, TAU); c.fill();
+  c.strokeStyle = 'rgba(63,198,255,.8)'; c.lineWidth = 1; c.setLineDash([4, 4]);
+  c.beginPath(); c.moveTo(cx - 125, cy); c.lineTo(cx + 125, cy); c.moveTo(cx, cy - 125); c.lineTo(cx, cy + 125); c.stroke(); c.setLineDash([]);
+  c.font = '700 14px Rubik, Arial'; c.fillStyle = contact ? '#ff6b6b' : '#4dff88';
+  c.fillText(contact ? 'CONTACT with hot ring!' : 'min. clearance ' + gap.toFixed(1) + ' mm', 14, H - 12);
+  c.font = '11px Rubik, Arial'; c.fillStyle = '#8b96a3';
+  c.fillText('ring ID 26 · tube OD 20 · nominal gap 3.0 mm', 14, H - 30);
+  if (note) { c.fillStyle = '#ffd24d'; c.fillText(note, 14, 40); }
+  return contact;
+}
+
+// ======================================================================
+//  Explainer definitions
+// ======================================================================
+const CYAN = 0x3fc6ff, ORANGE = 0xff7a2a, GREEN = 0x30e070, RED = 0xff3030, BLUE = 0x3fa6ff, YEL = 0xffd24d;
+const TAIL = ['tailstock', 'quill', 'bearings', 'spring', 'pneu'];
+const OVERVIEW = [700, 520, 900, -20, 150, 0];
+const EXPL = [
+// ---------------- 1. stroke limit ----------------
+{ title: '1 · Stroke limit vs ring mount', steps: [
+  { title: 'The ring sits between the holders', d: 5, cam: [0, 330, 1000, 0, 190, 0],
+    text: 'The heated ring is fixed to the machine frame. Its mount hangs down from above into the gap between the chuck and the tailstock, so the ring is <b>always somewhere between the two holders</b>.',
+    build() { ovLabel('Fixed heating ring', P_('ring'), [0, AX + 46, 0], -120, -60, 'hot'); ovLabel('Mount from above', P_('mount'), [0, AX + 120, 0], 120, -40, 'note'); },
+    apply(P) { P.xc = 0; P.hl.ring = ORANGE; P.hl.mount = BLUE; } },
+  { title: 'Length available between holders', d: 6, cam: [0, 300, 820, 0, 200, 0],
+    text: 'Free tube length from chuck face to live-center tip: <code>L = 400 mm</code>. The ring housing occupies <code>t = 28 mm</code> of it along the axis.',
+    build() {
+      dim(car, [-200, AX + 78, 0], [200, AX + 78, 0], 'L = 400 mm (chuck face → live center)', { extA: [-200, AX + 12, 0], extB: [200, AX + 16, 0], dy: -16 });
+      dim(scene, [-14, AX - 64, 30], [14, AX - 64, 30], 'housing t = 28 mm', { extA: [-14, AX - 46, 30], extB: [14, AX - 46, 30], dy: 22, delay: 1 });
+    },
+    apply(P) { P.xc = 0; P.hl.ring = ORANGE; P.hl.chuck = CYAN; P.hl.quill = CYAN; } },
+  { title: 'Travel end 1 – ring next to the live center', d: 6, cam: [140, 275, 440, 15, 190, 0], fly: 2.2,
+    text: 'At the start of the stroke the ring housing stops a safety clearance <code>c = 11 mm</code> short of the live center. Any further and it collides.',
+    build() { dim(scene, [14, AX - 36, 14], [25, AX - 36, 14], 'c = 11 mm', { extA: [14, AX - 20, 14], extB: [25, AX - 14, 14], dy: 26, delay: 2.2 }); },
+    apply(P, ts) { P.xc = lerp(0, -HALF, ramp(ts, 0, 2.2)); P.hl.ring = ORANGE; P.hl.quill = CYAN; P.hl.tailstock = CYAN; } },
+  { title: 'Travel end 2 – ring next to the chuck', d: 6, cam: [-140, 275, 440, -15, 190, 0], fly: 3,
+    text: 'At the other end the housing stops 11 mm short of the chuck jaws. The carriage cannot travel further without hitting the ring.',
+    build() { dim(scene, [-25, AX - 36, 14], [-14, AX - 36, 14], 'c = 11 mm', { extA: [-25, AX - 18, 14], extB: [-14, AX - 20, 14], dy: 26, delay: 3 }); },
+    apply(P, ts) { P.xc = lerp(-HALF, HALF, ramp(ts, 0, 3)); P.hl.ring = ORANGE; P.hl.chuck = CYAN; } },
+  { title: 'Usable stroke & un-laminated ends', d: 8, cam: [0, 320, 880, 0, 190, 0],
+    text: '<code>Stroke = L − t − 2·c = 400 − 28 − 2×11 = 350 mm</code>. The tube ends – 15 mm gripped plus 25 mm next to each holder – can <b>never</b> pass through the ring.',
+    build() {
+      sleeve(P_('tube'), -215, -175, 11.8, 0xff3030, 0.65, 0.3); sleeve(P_('tube'), 175, 215, 11.8, 0xff3030, 0.65, 0.3);
+      sleeve(P_('tube'), -175, 175, 11.3, 0x30e070, 0.35, 1.2);
+      ovLabel('Not laminated: 40 mm', P_('tube'), [-195, AX + 12, 0], -40, -60, 'warn', 0.3);
+      ovLabel('Not laminated: 40 mm', P_('tube'), [195, AX + 12, 0], 40, -60, 'warn', 0.3);
+      ovLabel('Laminatable: 350 mm', P_('tube'), [-90, AX - 12, 0], 0, 60, 'ok', 1.2);
+    },
+    apply(P) { P.xc = 0; P.lam = false; } },
+  { title: 'Mount clearance over the whole travel', d: 8, cam: [340, 230, 560, 0, 150, -20],
+    text: 'The mount and ring must clear the moving plate and holders at every position – here 31 mm under the housing and 35 mm to the column. Check with the worst-case chuck diameter and cable routing.',
+    build() {
+      dim(scene, [32, PLATE_TOP, 52], [32, AX - 47, 52], '31 mm', { dx: 60, dy: -10 });
+      dim(scene, [0, 126, -50], [0, 126, -85], '35 mm', { dx: -60, dy: 10, delay: 0.6 });
+    },
+    apply(P, ts) { P.xc = HALF * Math.sin(TAU * ts / 7); P.angle = ts * TAU * 0.5; P.hl.mount = BLUE; P.hl.plate = GREEN; P.hl.ring = ORANGE; P.lam = false; } },
+  { title: 'Ways to gain stroke', d: 7, cam: OVERVIEW,
+    text: 'Longer distance between holders (longer tube blank or adjustable tailstock) · thinner ring housing · smaller clearance with hard stops + limit switches · a split (clamshell) heater. Remember that <b>acceleration distance</b> also costs stroke (see explainer 4).',
+    apply(P, ts) { P.xc = HALF * Math.sin(TAU * ts / 7); P.angle = ts * TAU * 0.5; P.lam = false; } },
+]},
+// ---------------- 2. live center ----------------
+{ title: '2 · Live center & axial preload', steps: [
+  { title: 'The tailstock end', d: 5, cam: [400, 300, 400, 260, 195, 0],
+    text: 'The tailstock supports the free end of the tube. It has two jobs: <b>let the tube rotate</b> and <b>push it axially with a controlled force</b>.',
+    apply(P, ts) { P.xc = 0; P.angle = ts * TAU * 0.5; P.focus = [...TAIL, 'tube', 'plate']; P.ghost = 0.18; P.lam = false; } },
+  { title: 'Exploded tailstock', d: 9, cam: [360, 340, 480, 275, 200, -40],
+    text: 'Live-center cup and quill spindle turn on a pair of angular-contact bearings inside the housing. Behind it, a preload spring and a pneumatic cylinder (preload + retract for loading). A slide clamp sets the tailstock position for different tube lengths.',
+    build() {
+      const d = 2.3;
+      ovLabel('Live-center cup', P_('quill'), [tailFace + 7, AX + 14, 0], -50, -70, 'note', d);
+      ovLabel('Quill spindle', P_('quill'), [tailFace + 50, AX + 8, 0], 10, 70, 'note', d);
+      ovLabel('Bearings (angular-contact pair)', P_('bearings'), [238, AX + 15, 0], 0, -60, 'note', d);
+      ovLabel('Preload spring', P_('spring'), [280, AX + 8, 0], 30, -55, 'note', d);
+      ovLabel('Pneumatic cylinder: preload & retract', P_('pneu'), [318, AX + 16, 0], 60, -40, 'note', d);
+      ovLabel('Housing + upright', P_('tailstock'), [TS, AX + 45, 0], -40, -50, 'note', d);
+      ovLabel('Slide clamp', P_('tailstock'), [TS, PLATE_TOP + 12, 53], 60, 40, 'note', d);
+    },
+    apply(P, ts) { P.xc = 0; P.angle = ts * TAU * 0.4; P.lam = false; explodeTail(P, ramp(ts, 0.3, 2.3)); P.focus = [...TAIL, 'tube', 'plate']; P.ghost = 0.18; } },
+  { title: 'What if the center does NOT rotate?', d: 8, cam: [60, 330, 780, 40, 190, 0],
+    text: 'The chuck turns the tube but the far end is held still: the tube <b>twists</b> (shown exaggerated) and the end rubs in the center – scuffing, heat and wandering wrap.',
+    build() { ovLabel('Center fixed → tube twists', car, [tailFace, AX + 20, 0], 30, -80, 'warn', 1.2); },
+    apply(P, ts) { P.xc = 0; P.lam = false; explodeTail(P, 1 - ramp(ts, 0, 1));
+      const th = Math.min(1.6 * Math.PI, Math.max(0, ts - 1.2) * TAU * 0.25); P.angle = th; P.centerAngle = 0; P.deform = { twist: -th }; P.hl.quill = RED; } },
+  { title: 'Rotating live center', d: 6, cam: [300, 270, 330, 240, 190, 0],
+    text: 'With the cup on its own bearings the whole tube turns as one body – no twist, no rubbing. The housing is shown transparent.',
+    build() { arcArrow(car, [tailFace + 22, AX, 0], 22, 0.3, 2.8, 0x4dff88); ovLabel('Cup rotates with the tube', car, [tailFace + 22, AX + 24, 0], 20, -70, 'ok', 0.5); },
+    apply(P, ts) { P.xc = 0; P.lam = false; P.angle = ts * TAU * 0.5; P.op.tailstock = 0.2; P.hl.quill = GREEN; P.hl.bearings = GREEN; } },
+  { title: 'Thermal expansion against the spring', d: 8, cam: [340, 300, 380, 250, 190, 0],
+    text: '<code>ΔL = α·L·ΔT ≈ 23·10⁻⁶ × 400 × 150 ≈ 1.4 mm</code> for aluminium (shown ×8). The quill moves back against the spring / constant-pressure cylinder, so the axial force stays almost constant.',
+    build() {
+      arrow(car, [tailFace - 60, AX + 30, 0], [tailFace - 5, AX + 30, 0], 0xff8a3a, { delay: 0.5 });
+      ovLabel('Expansion pushes the quill back', car, [tailFace - 30, AX + 30, 0], -40, -50, 'note', 0.5);
+      ovLabel('Spring compresses', P_('spring'), [280, AX + 10, 0], 40, -60, 'ok', 1.5);
+    },
+    apply(P, ts) { P.xc = 0; P.lam = false; P.angle = ts * TAU * 0.5; const st = 12 * ramp(ts, 0.5, 4.5);
+      P.deform = { stretch: st }; P.quillX = st; P.op.tailstock = 0.2; P.op.pneu = 0.45; P.hl.spring = GREEN; P.hl.ring = ORANGE; } },
+  { title: 'Rigid center → the tube bows', d: 7, cam: [0, 300, 740, 0, 200, 0],
+    text: 'If the center cannot move, the expansion has nowhere to go: the hot tube buckles sideways (exaggerated) – straight into the 3 mm ring gap.',
+    build() { ovLabel('ΔL trapped → tube bows into the ring', scene, [0, AX + 30, 0], 0, -90, 'warn', 1.5); },
+    apply(P, ts) { P.xc = 0; P.lam = false; P.angle = ts * TAU * 0.5; P.deform = { buckle: 12 * ramp(ts, 0.5, 3.5) }; P.hl.tube = RED; P.hl.quill = RED; } },
+  { title: 'Takeaway', d: 6, cam: [400, 340, 480, 275, 200, -30],
+    text: 'Use a <b>rotating live center</b> (bearings in the quill), <b>axial preload</b> by spring or pneumatic cylinder with enough travel for ΔL, and a cup/cone that centres the tube end. A pneumatic quill also gives fast load/unload.',
+    apply(P, ts) { P.xc = 0; P.lam = false; P.angle = ts * TAU * 0.4; explodeTail(P, 0.6); P.focus = [...TAIL, 'tube', 'plate']; P.ghost = 0.18; } },
+]},
+// ---------------- 3. sag & runout ----------------
+{ title: '3 · Tube sag & runout', steps: [
+  { title: 'Only 3 mm radial clearance', d: 6, cam: [-300, 232, 110, 0, 190, 0], inset: true,
+    text: 'Ring ID 26 mm, tube OD 20 mm → <code>(26 − 20) / 2 = 3 mm</code> radial clearance all around. Everything that moves the tube off-axis eats into this gap.',
+    apply(P, ts, u, C) { P.xc = 0; P.angle = ts * TAU * 0.5; P.hl.ring = ORANGE; drawRingSection(0, 0, 0); } },
+  { title: 'Sag of the hot tube', d: 8, cam: [0, 250, 640, 0, 180, 0], inset: true,
+    text: 'Held only at its ends, the softened tube sags under its own weight: <code>δ ≈ 5·w·L⁴ / (384·E·I)</code> – it grows with L⁴ and as E drops with temperature. (3D deflection shown ×4.)',
+    build(C) { C.w = ovLabel('Sag > 3 mm → contact', scene, [0, AX - 30, 0], 0, 80, 'warn'); ovLabel('deflection shown ×4', P_('tube'), [-150, AX + 12, 0], 0, -60, 'note'); },
+    apply(P, ts, u, C) { P.xc = 0; P.angle = ts * TAU * 0.5; const sag = 4 * ramp(ts, 0.5, 5); P.deform = { sag: sag * 4 }; P.hl.ring = ORANGE;
+      const c = drawRingSection(sag, 0, 0, 'sag ' + sag.toFixed(1) + ' mm'); C.w.visible = c; if (c) P.hl.tube = RED; } },
+  { title: 'Runout ("throw") while rotating', d: 8, cam: [-280, 262, 300, 0, 190, 0], inset: true,
+    text: 'Chuck runout, a slightly bent tube or a loose center make the tube whirl as it turns. Sag + runout above 3 mm = contact with the hot ring once per revolution.',
+    build(C) { C.w = ovLabel('Contact once per revolution!', scene, [0, AX + 50, 0], -60, -60, 'warn'); },
+    apply(P, ts, u, C) { P.xc = 0; P.angle = ts * TAU * 0.5; P.deform = { sag: 1.5 * 4, whirl: 2.5 * 4 }; P.hl.ring = ORANGE;
+      const c = drawRingSection(1.5, 2.5, P.angle, 'sag 1.5 + runout 2.5'); C.w.visible = c; if (c) P.hl.tube = RED; } },
+  { title: 'Option A – travelling steady rest', d: 10, cam: [60, 330, 720, 0, 170, 0], inset: true,
+    text: 'A V-roller rest on the carriage supports the tube … until the ring arrives. It must drop away to let the ring pass, so the tube is unsupported exactly when it matters.',
+    build(C) { C.w = ovLabel('Rest must retract → unsupported', P_('restA'), [REST_A_X, AX - 30, 0], -40, 80, 'warn'); C.o = ovLabel('Supported', P_('restA'), [REST_A_X, AX - 30, 0], -40, 80, 'ok'); },
+    apply(P, ts, u, C) { P.show.restA = true; P.xc = lerp(-HALF, HALF, ramp(ts, 0.5, 9.5)); P.angle = ts * TAU * 0.5;
+      const down = 40 * (clamp((P.xc - 60) / 25) - clamp((P.xc - 140) / 25)); P.restADown = down;
+      const sag = lerp(0.6, 3.4, down / 40); P.deform = { sag: sag * 4 }; P.hl.restA = down > 1 ? RED : GREEN;
+      C.w.visible = down > 1; C.o.visible = down <= 1; drawRingSection(sag, 0, 0, down > 1 ? 'rest retracted' : 'rest engaged'); } },
+  { title: 'Option B – rest fixed next to the ring', d: 10, cam: [-270, 300, 430, -40, 190, 0], inset: true,
+    text: 'A 3-roller rest fixed to the ring mount on the <b>cold</b> side supports the tube right at the ring for the whole stroke. Trade-off: it adds ~29 mm to the ring package, so the stroke shrinks to ≈321 mm.',
+    build(C) { ovLabel('Supports the tube at the ring – whole stroke', P_('restB'), [REST_B_X, AX + 58, 0], -120, -60, 'ok'); C.w = ovLabel('End of travel: stroke −29 mm', car, [chuckFace, AX + 32, 0], -40, -60, 'warn'); },
+    apply(P, ts, u, C) { P.show.restB = true; P.xc = lerp(-HALF, 146, ramp(ts, 0.5, 9)); P.angle = ts * TAU * 0.5; P.deform = { sag: 0.3 * 4 }; P.hl.restB = GREEN;
+      C.w.visible = ts > 8.6; drawRingSection(0.3, 0.2, P.angle, 'with steady rest'); } },
+  { title: 'Chuck centering', d: 8, cam: [-90, 290, 300, -225, 190, 0],
+    text: 'A 3-jaw self-centering chuck has typically 0.03–0.1 mm TIR, and hard jaws can oval a thin hot tube. Soft (bored) jaws or a <b>collet</b> (TIR &lt; 0.02 mm) centre far better.',
+    build() {
+      ovLabel('3-jaw chuck: TIR ≈ 0.03–0.1 mm', P_('chuck'), [chuckFace - 22, AX + 30, 0], -40, -80, 'note', 1.5);
+      ovLabel('Jaws move radially – self-centering', P_('chuck'), [chuckFace - 8, AX - 45, 0], 40, 70, 'note', 2);
+    },
+    apply(P, ts) { P.xc = 0; P.angle = 0.3; const k = ramp(ts, 0.5, 2.5); P.jaw = 3 * k;
+      P.focus = ['chuck', 'tube']; P.ghost = 0.15; P.hl.chuck = CYAN; } },
+  { title: 'Internal mandrel', d: 7, cam: [0, 300, 700, 0, 190, 0],
+    text: 'A mandrel (arbor) through the tube supports it from inside: no sag, no ovalisation, and both holders grip a rigid core. Make sure it can be pulled out after lamination.',
+    build() { ovLabel('Internal mandrel – supports from inside', P_('mandrel'), [-120, AX, 0], 0, -80, 'ok', 0.5); },
+    apply(P, ts) { P.xc = 0; P.angle = ts * TAU * 0.5; P.show.mandrel = true; P.op.tube = 0.25; P.hl.mandrel = GREEN; P.lam = false; } },
+]},
+// ---------------- 4. synchronisation ----------------
+{ title: '4 · Axis synchronization', steps: [
+  { title: 'Two axes, one helix', d: 6, cam: OVERVIEW,
+    text: 'The linear axis X (screw) moves the tube through the ring at <code>v</code> mm/s; the rotary axis A (servo) turns it at <code>n</code> RPM. The wrap is the helix traced by the ring on the tube.',
+    build() {
+      arrow(car, [-70, AX + 90, 0], [70, AX + 90, 0], BLUE, { r: 2.2 }); ovLabel('Linear axis X – v [mm/s]', car, [0, AX + 90, 0], 0, -40, 'dim');
+      arcArrow(car, [chuckFace + 30, AX, 0], 26, 0.4, 5.3, 0xff8a3a, { r: 2 }); ovLabel('Rotary axis A – n [RPM]', car, [chuckFace + 30, AX + 30, 0], -40, -80, 'note');
+    },
+    apply(P, ts) { P.xc = 60 * Math.sin(TAU * ts / 6); P.angle = ts * TAU; P.lam = false;
+      P.hl.linMotor = BLUE; P.hl.screw = BLUE; P.hl.carriage = BLUE; P.hl.servo = 0xff8a3a; P.hl.chuck = 0xff8a3a; } },
+  { title: 'The pitch formula', d: 6, cam: [0, 280, 700, 0, 190, 0],
+    text: '<code>p = v · 60 / n</code> – e.g. 30 mm/s at 60 RPM → 30 mm per revolution. The ratio v/n must stay constant <b>at every instant</b>, not only at cruise speed.',
+    build(C) { C.r = buildRibbon(PROF.gear); C.r.show(1e9); ovLabel('p = 30 mm/rev', P_('tube'), [0, AX + 14, 0], 0, -70, 'dim'); },
+    apply(P, ts) { P.xc = 0; P.angle = ts * TAU * 0.25; P.lam = false; } },
+  { title: 'Independent ramps (not synchronized)', d: PROF.mis.Tend + 2, cam: [0, 290, 860, 0, 190, 0], inset: true, follow: 0.55,
+    text: 'Linear axis accelerates in 0.3 s, rotary in 1.6 s: at the start the tube moves before it turns → <b>stretched pitch</b>. At the end the tube stops but keeps turning → <b>overlapping wrap & overheating</b>. (time-scaled ×2)',
+    build(C) { C.r = buildRibbon(PROF.mis);
+      C.w1 = ovLabel('Rotation lags → pitch too long', P_('tube'), [150, AX + 12, 0], 40, -70, 'warn');
+      C.w2 = ovLabel('Still rotating after stop → over-wrap / burn', P_('tube'), [-172, AX + 12, 0], -30, -70, 'warn'); },
+    apply(P, ts, u, C) { const pr = PROF.mis, t = clamp(ts - 0.5, 0, pr.Tend), i = pr.at(t);
+      P.xc = -HALF + pr.X[i]; P.angle = pr.A[i]; P.lam = false; C.r.show(t); P.hl.ring = ORANGE;
+      C.w1.visible = t > 0.8; C.w2.visible = t > pr.Tend - 1.2; drawPlots(pr, t, 'Independent ramps'); } },
+  { title: 'Electronic gearing (master → slave)', d: PROF.gear.Tend + 2, cam: [0, 290, 860, 0, 190, 0], inset: true, follow: 0.55,
+    text: 'The rotary axis follows the linear axis position through a fixed gear ratio: <code>n(t) = v(t) · 60 / p</code>. Both curves coincide, pitch stays at 30 mm/rev even during the ramps → uniform wrap from end to end.',
+    build(C) { C.r = buildRibbon(PROF.gear, 0xd88a2a); C.o = ovLabel('Uniform pitch along the whole wrap', P_('tube'), [0, AX + 12, 0], 0, -80, 'ok'); },
+    apply(P, ts, u, C) { const pr = PROF.gear, t = clamp(ts - 0.5, 0, pr.Tend), i = pr.at(t);
+      P.xc = -HALF + pr.X[i]; P.angle = pr.A[i]; P.lam = false; C.r.show(t); P.hl.ring = ORANGE;
+      C.o.visible = t > pr.Tend * 0.5; drawPlots(pr, t, 'Electronic gearing'); } },
+  { title: 'Ramp outside the lamination zone', d: 8, cam: [0, 280, 720, 0, 190, 0],
+    text: 'Even with perfect gearing the heat dose changes while the speed changes. Accelerate <b>before</b> the lamination zone reaches the ring: <code>s = v² / (2a) = 30² / (2×20) ≈ 22 mm</code> – this length adds to the dead zones or costs stroke.',
+    build() { buildRibbon(PROF.gear).show(1e9);
+      sleeve(P_('tube'), 175 - 22, 175, 12.6, 0xffd24d, 0.6, 0.5); sleeve(P_('tube'), -175, -175 + 22, 12.6, 0xffd24d, 0.6, 0.5);
+      ovLabel('Accel. zone ≈ 22 mm', P_('tube'), [164, AX + 12, 0], 40, -70, 'note', 0.5);
+      ovLabel('Decel. zone ≈ 22 mm', P_('tube'), [-164, AX + 12, 0], -40, -70, 'note', 0.5); },
+    apply(P, ts) { P.xc = 0; P.angle = 0.6; P.lam = false; } },
+  { title: 'How to implement it', d: 7, cam: OVERVIEW, inset: true,
+    text: 'One motion controller: rotary axis electronically geared (or cammed) to the linear axis, or 2-axis coordinated moves (e.g. <code>G1 X… A…</code>). Same ramp for both, following-error monitoring, heater interlocked with motion.',
+    apply(P, ts) { P.xc = 60 * Math.sin(TAU * ts / 7); P.angle = ts * TAU; P.lam = false; drawPlots(PROF.gear, null, 'Target: v and n move together'); } },
+]},
+// ---------------- 5. full cycle ----------------
+{ title: 'Full machine cycle', steps: [
+  { title: '0 · The loading problem', d: 6, cam: [420, 400, 720, 0, 190, 0],
+    text: 'The ring is a closed loop and the tube is held at both ends – it cannot simply be dropped in. Either thread it axially through the ring, or use a <b>split (clamshell) heater</b> that opens. Shown: clamshell.',
+    build() { ovLabel('Clamshell heater opens', P_('ringHalves'), [0, AX + 50, 0], 0, -70, 'note', 1); },
+    apply(P, ts) { P.xc = -HALF; P.split = ramp(ts, 1, 3); P.heat = 0; P.jaw = 1; P.quillX = 25; P.tubeLift = [0, 140, 170]; P.lam = false; } },
+  { title: '1 · Load the tube', d: 4, cam: [420, 400, 720, 0, 190, 0],
+    text: 'The tube (by hand or robot) is placed on the axis between the open chuck and the retracted live center.',
+    apply(P, ts) { P.xc = -HALF; P.split = 1; P.heat = 0; P.jaw = 1; P.quillX = 25; const k = 1 - ramp(ts, 0.2, 3.2); P.tubeLift = [0, 140 * k, 170 * k]; P.lam = false; P.hl.tube = CYAN; } },
+  { title: '2 · Clamp', d: 4, cam: [300, 330, 560, -20, 190, 0],
+    text: 'The chuck closes on one end, then the pneumatic quill pushes the live center in and applies axial preload.',
+    build() { ovLabel('Chuck closes', P_('chuck'), [chuckFace - 15, AX + 30, 0], -40, -60, 'note'); ovLabel('Quill advances – preload', P_('quill'), [tailFace + 20, AX + 16, 0], 40, -60, 'note', 1.5); },
+    apply(P, ts) { P.xc = -HALF; P.split = 1; P.heat = 0; P.jaw = 1 - ramp(ts, 0.2, 1.4); P.quillX = 25 * (1 - ramp(ts, 1.5, 2.8)); P.lam = false; P.hl.chuck = CYAN; P.hl.quill = CYAN; } },
+  { title: '3 · Close ring & heat up', d: 5, cam: [-80, 280, 420, -20, 190, 0],
+    text: 'The heater closes around the tube without touching it and reaches its set-point (thermocouple-controlled). The tube already rotates to avoid a hot spot.',
+    apply(P, ts) { P.xc = -HALF; P.split = 1 - ramp(ts, 0.2, 1.8); P.heat = ramp(ts, 1.8, 4); P.lam = false; P.angle = Math.max(0, ts - 2) * TAU * 0.5; } },
+  { title: '4 · Laminate', d: 10, cam: [520, 420, 720, 0, 170, 0],
+    text: 'Synchronised ramp-up, then constant feed and rotation: the tube passes through the ring and the laminate wraps as a uniform helix.',
+    apply(P, ts) { const t = Math.max(0, ts - 0.5); const x = Math.min(D.stroke, 37 * t); P.xc = -HALF + x; P.angle = 1.5 * TAU * 0.5 + x / 30 * TAU; P.lamX = 0; } },
+  { title: '5 · Stop, heater off & open', d: 4, cam: [300, 330, 560, 40, 190, 0],
+    text: 'At the end of the stroke the motion stops together, the heater switches off and opens – the laminate is not over-heated.',
+    apply(P, ts) { P.xc = HALF; P.angle = 1.5 * TAU * 0.5 + D.stroke / 30 * TAU; P.lamX = 0; P.heat = 1 - ramp(ts, 0, 1.5); P.split = ramp(ts, 1, 2.5); } },
+  { title: '6 · Unclamp & unload', d: 5, cam: [300, 360, 620, 40, 200, 0],
+    text: 'The quill retracts, the chuck opens and the finished tube is removed.',
+    apply(P, ts) { P.xc = HALF; P.angle = 1.5 * TAU * 0.5 + D.stroke / 30 * TAU; P.lamX = 0; P.heat = 0; P.split = 1;
+      P.quillX = 25 * ramp(ts, 0.2, 1.2); P.jaw = ramp(ts, 1, 2); const k = ramp(ts, 2, 4.5); P.tubeLift = [0, 140 * k, 170 * k]; P.hl.tube = CYAN; } },
+  { title: '7 · Return', d: 5, cam: [520, 420, 760, 0, 170, 0],
+    text: 'The empty carriage returns at rapid speed – ready for the next tube. Cycle ≈ load + clamp + heat-up + 350 mm / v + return.',
+    build() { arrow(car, [60, AX + 90, 0], [-60, AX + 90, 0], BLUE, { r: 2.2 }); ovLabel('Rapid return', car, [0, AX + 90, 0], 0, -40, 'dim'); },
+    apply(P, ts) { P.xc = lerp(HALF, -HALF, ramp(ts, 0.3, 3.3)); P.split = 1 - ramp(ts, 3.5, 4.8); P.heat = 0; P.jaw = 1; P.quillX = 25; P.hide.tube = true; P.lam = false; } },
+]},
+];
+function explodeTail(P, k) {
+  if (k <= 0) return;
+  P.off.tailstock = [0, 0, -130 * k]; P.off.bearings = [0, 50 * k, 0]; P.off.spring = [50 * k, 0, 0]; P.off.pneu = [105 * k, 0, 0]; P.off.quill = [-15 * k, 0, 0];
+}
+
+// ======================================================================
+//  Explainer engine
+// ======================================================================
+const X = { active: false, k: -1, t: 0, playing: true, built: -1, starts: [], total: 0, camStart: null, C: {} };
+const $ = id => document.getElementById(id);
+const progEl = $('xpProg');
+function camOf(a) { return { p: new THREE.Vector3(a[0], a[1], a[2]), t: new THREE.Vector3(a[3], a[4], a[5]) }; }
+function startExplainer(k) {
+  const E = EXPL[k]; X.k = k; X.active = true; X.t = 0; X.playing = true; X.built = -1; X.C = {};
+  X.starts = []; let s = 0; for (const st of E.steps) { X.starts.push(s); s += st.d; } X.total = s;
+  X.camStart = { p: camera.position.clone(), t: controls.target.clone() };
+  X.savedCam = { p: camera.position.clone(), t: controls.target.clone() };
+  controls.enabled = false;
+  document.body.classList.remove('menuopen'); syncMenuBtn();
+  document.body.classList.add('explaining');
+  $('xpTitle').textContent = E.title;
+  progEl.querySelectorAll('span').forEach(e => e.remove());
+  for (let i = 1; i < E.steps.length; i++) { const m = document.createElement('span'); m.style.left = (X.starts[i] / X.total * 100) + '%'; progEl.appendChild(m); }
+  for (const L of staticLabels) placeLabel(L, false);
+  updXPlay();
+}
+function exitExplainer() {
+  clearOverlay(); X.active = false; X.k = -1; showInset(false);
+  document.body.classList.remove('explaining');
+  camera.position.copy(X.savedCam.p); controls.target.copy(X.savedCam.t); controls.enabled = true; controls.update();
+}
+function stepAt(t) { let i = 0; while (i + 1 < X.starts.length && t >= X.starts[i + 1] - 1e-9) i++; return i; }
+function updXPlay() { $('xPlay').textContent = X.playing ? '⏸' : '▶'; }
+function xUpdate(dt) {
+  const E = EXPL[X.k];
+  if (X.playing) { X.t += dt; if (X.t >= X.total) { X.t = X.total - 1e-4; X.playing = false; updXPlay(); } }
+  const i = stepAt(X.t), st = E.steps[i], ts = X.t - X.starts[i], u = ts / st.d;
+  if (i !== X.built) {
+    X.fromCam = (X.built === -1) ? X.camStart : { p: camera.position.clone(), t: controls.target.clone() };
+    clearOverlay(); X.C = {}; X.built = i;
+    if (st.build) st.build(X.C);
+    $('xpStep').textContent = st.title; $('xpText').innerHTML = st.text; $('xpStepNo').textContent = `Step ${i + 1} / ${E.steps.length}`;
+    showInset(!!st.inset);
+  }
+  const P = defP(); P.angle = X.t * TAU * 0.5;
+  st.apply(P, ts, u, X.C);
+  // camera fly
+  const from = X.fromCam, to = camOf(st.cam || OVERVIEW);
+  const k = ease(ts / (st.fly ?? Math.min(1.6, st.d * 0.4)));
+  camera.position.lerpVectors(from.p, to.p, k); controls.target.lerpVectors(from.t, to.t, k);
+  if (st.follow) { const fx = (P.xc + HALF) * st.follow * k; camera.position.x += fx; controls.target.x += fx; }
+  camera.lookAt(controls.target);
+  commit(P);
+  progEl.firstElementChild.style.width = (X.t / X.total * 100) + '%';
+  return ts;
+}
+$('xPlay').onclick = () => { if (!X.playing && X.t >= X.total - 1e-3) X.t = 0; X.playing = !X.playing; updXPlay(); };
+$('xReplay').onclick = () => { X.t = 0; X.built = -1; X.playing = true; updXPlay(); };
+$('xNext').onclick = () => { const i = stepAt(X.t); if (i + 1 < X.starts.length) { X.t = X.starts[i + 1]; } };
+$('xPrev').onclick = () => { const i = stepAt(X.t), ts = X.t - X.starts[i]; X.t = (ts > 1 || i === 0) ? X.starts[i] : X.starts[i - 1]; };
+$('xExit').onclick = exitExplainer;
+progEl.onclick = e => { const r = progEl.getBoundingClientRect(); X.t = clamp((e.clientX - r.left) / r.width) * X.total * 0.9999; };
+document.querySelectorAll('.xbtn').forEach(b => b.onclick = () => startExplainer(+b.dataset.x));
+addEventListener('keydown', e => { if (!X.active) return; if (e.key === 'Escape') exitExplainer(); if (e.key === ' ') { e.preventDefault(); $('xPlay').click(); } if (e.key === 'ArrowRight') $('xNext').click(); if (e.key === 'ArrowLeft') $('xPrev').click(); });
+
+// ======================================================================
+//  Normal simulation
+// ======================================================================
+const S = { v: 10, rpm: 60, xc: -HALF, angle: 0, maxXc: -HALF, playing: true, phase: 'run', wait: 0 };
+const sLin = $('sLin'), sRpm = $('sRpm'), loopChk = $('cLoop');
+function readUI() { S.v = +sLin.value; S.rpm = +sRpm.value; $('vLin').textContent = S.v.toFixed(1) + ' mm/s'; $('vRpm').textContent = S.rpm + ' RPM'; }
+function updatePlayBtn() { $('bPlay').textContent = S.playing ? '⏸ Pause' : '▶ Play'; }
+sLin.oninput = sRpm.oninput = readUI;
+$('bPlay').onclick = () => { if (!S.playing && S.phase === 'wait') S.phase = 'return'; S.playing = !S.playing; updatePlayBtn(); };
+$('bReset').onclick = () => Object.assign(S, { xc: -HALF, maxXc: -HALF, angle: 0, phase: 'run' });
+$('cLbl').onchange = e => { UI.labels = e.target.checked; };
+$('sExp').oninput = e => { UI.explode = +e.target.value; $('vExp').textContent = Math.round(UI.explode * 100) + '%'; };
+$('bXray').onclick = e => { UI.xray = !UI.xray; e.target.classList.toggle('on', UI.xray); };
+$('bSect').onclick = e => { UI.section = !UI.section; e.target.classList.toggle('on', UI.section); };
+$('bView').onclick = () => { camera.position.copy(HOME.p); controls.target.copy(HOME.t); controls.update(); };
+$('bBom').onclick = () => { $('bom').classList.toggle('open'); if (document.body.classList.contains('mobile')) { document.body.classList.remove('menuopen'); syncMenuBtn(); } };
+$('bBomX').onclick = () => { $('bom').classList.remove('open'); UI.isolate = null; renderBom(); };
+// BOM
+const BOM_ORDER = ['base', 'rods', 'screw', 'linMotor', 'carriage', 'plate', 'headstock', 'servo', 'chuck', 'tailstock', 'quill', 'bearings', 'spring', 'pneu', 'ring', 'mount', 'tube', 'ringHalves', 'restA', 'restB', 'mandrel'];
+function renderBom() {
+  const el = $('bomList'); el.innerHTML = '';
+  BOM_ORDER.forEach((n, i) => {
+    const p = parts[n]; const d = document.createElement('div'); d.className = 'bi' + (UI.isolate === n ? ' sel' : '');
+    d.innerHTML = `<span class="no">${i + 1}</span><span>${p.label}<span class="d">${p.desc}</span></span><span class="q">×${p.qty}</span>`;
+    d.onclick = () => { UI.isolate = UI.isolate === n ? null : n; renderBom(); };
+    el.appendChild(d);
+  });
+}
+renderBom();
+function step(dt) {
+  if (S.phase === 'run') {
+    S.xc += S.v * dt; S.angle += S.rpm / 60 * TAU * dt;
+    if (S.xc >= HALF) { S.xc = HALF; S.phase = 'wait'; S.wait = 1.2; }
+    S.maxXc = Math.max(S.maxXc, S.xc);
+  } else if (S.phase === 'wait') {
+    S.wait -= dt; if (S.wait <= 0) { if (loopChk.checked) S.phase = 'return'; else { S.playing = false; updatePlayBtn(); } }
+  } else if (S.phase === 'return') {
+    S.xc -= 150 * dt; if (S.xc <= -HALF) { S.xc = -HALF; S.maxXc = -HALF; S.phase = 'run'; }
+  }
+}
+function normalPose() {
+  const P = defP();
+  P.xc = S.xc; P.angle = S.angle; P.lamX = S.xc - S.maxXc; P.pitch = S.v * 60 / S.rpm;
+  P.explode = UI.explode; P.xray = UI.xray;
+  if (UI.isolate) { P.focus = [UI.isolate]; P.ghost = 0.1; P.hl[UI.isolate] = CYAN; P.show[UI.isolate] = true; }
+  return P;
+}
+function updateReadouts() {
+  const pitch = S.v * 60 / S.rpm, pos = S.xc + HALF, lamLen = Math.max(0, S.maxXc + HALF);
+  $('oPitch').textContent = pitch.toFixed(2) + ' mm/rev';
+  $('oPos').textContent = pos.toFixed(1) + ' / ' + D.stroke + ' mm';
+  $('oLam').textContent = lamLen.toFixed(1) + ' mm';
+  $('oScrew').textContent = (S.v / D.screwPitch * 60).toFixed(0) + ' RPM';
+  $('oCycle').textContent = (D.stroke / S.v).toFixed(1) + ' s';
+  $('prog').style.width = (pos / D.stroke * 100) + '%';
+  $('hLin').textContent = S.v.toFixed(0) + ' mm/s'; $('hRpm').textContent = S.rpm + ' RPM';
+  $('hPitch').textContent = pitch.toFixed(1) + ' mm/rev'; $('hPos').textContent = pos.toFixed(0) + ' mm';
+  return lamLen;
+}
+function placeStatic(lamLen) {
+  const show = UI.labels && !X.active && !UI.isolate && UI.explode < 0.05;
+  lamLbl.visible = lamLen > 40; lamLbl.local.x = Math.min(lamLen * 0.5, 120);
+  for (const L of staticLabels) placeLabel(L, show);
+}
+
+// ---------- mobile: menu toggle + view offset so the model sits in the uncovered area ----------
+const mbtn = $('mbtn');
+function syncMenuBtn() { mbtn.textContent = document.body.classList.contains('menuopen') ? '✕ Close' : '☰ Controls'; }
+mbtn.onclick = () => { document.body.classList.toggle('menuopen'); syncMenuBtn(); };
+if (IS_MOBILE) { UI.labels = false; $('cLbl').checked = false; }
+let lastOff = '';
+function updateViewOffset() {
+  const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
+  if (!document.body.classList.contains('mobile')) {
+    if (lastOff !== 'desk') { camera.clearViewOffset(); camera.fov = 32; camera.aspect = w / h; camera.updateProjectionMatrix(); lastOff = 'desk'; }
+    return;
+  }
+  const land = document.body.classList.contains('landscape');
+  let bottom = 0, right = 0, left = 0, xpOcc = false;
+  for (const id of ['xp', 'panel', 'bom']) {
+    const el = $(id); if (getComputedStyle(el).display === 'none') continue;
+    const r = el.getBoundingClientRect(); if (r.width === 0) continue;
+    if (land) { if (r.left > w / 3) right = Math.max(right, w - r.left); else left = Math.max(left, r.right); }
+    else bottom = Math.max(bottom, h - r.top);
+    if (id === 'xp') xpOcc = true;
+  }
+  const key = [w, h, bottom, right, left, xpOcc].join(); if (key === lastOff) return; lastOff = key;
+  // keep the same horizontal coverage as the desktop 16:9 view inside the free area
+  const fw = Math.max(50, w - left - right), fh = Math.max(50, h - bottom), af = fw / fh, base = Math.tan(THREE.MathUtils.degToRad(16));
+  const vf = af < 1.6 ? 2 * Math.atan(base * 1.6 / af) : 2 * Math.atan(base);
+  const occScale = xpOcc ? (h / fh) : 1;            // explainer: fit into the free area; menu/BOM: just shift
+  const ref = xpOcc ? 1.6 : 1.2, effH = xpOcc ? fh : h, ae = (w - (xpOcc ? left + right : 0)) / effH, vfFull = ae < ref ? 2 * Math.atan(base * ref / ae) : 2 * Math.atan(base);
+  camera.fov = clamp(THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(vfFull / 2) * occScale)), 20, 100);
+  camera.aspect = w / h;
+  camera.setViewOffset(w, h, (right - left) / 2, bottom / 2, w, h);
+  camera.updateProjectionMatrix();
+}
+window.__cam = () => camera.position.toArray().map(v => +v.toFixed(1));
+
+function resize() {
+  mobileLayout(); lastOff = '';
+  const w = RENDER ? 1280 : innerWidth, h = RENDER ? 720 : innerHeight;
+  renderer.setSize(w, h, !RENDER); composer.setSize(w, h);
+  if (RENDER) { canvas.style.width = w + 'px'; canvas.style.height = h + 'px'; }
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); addEventListener('orientationchange', () => setTimeout(resize, 250)); if (window.visualViewport) visualViewport.addEventListener('resize', resize); resize();
+
+function frame(dt) {
+  let ts = 0;
+  if (!RENDER) updateViewOffset();
+  if (X.active) ts = xUpdate(dt);
+  else { commit(normalPose()); }
+  const lamLen = updateReadouts();
+  composer.render();
+  placeStatic(lamLen);
+  if (X.active) updateOverlay(ts);
+}
+
+window.__errors = [];
+if (!RENDER) {
+  readUI();
+  let last = performance.now();
+  (function loop(now) {
+    requestAnimationFrame(loop);
+    const dt = Math.min((now - last) / 1000, 0.05); last = now;
+    if (!X.active && S.playing) step(dt);
+    if (!X.active) controls.update();
+    frame(dt);
+  })(last);
+  window.startExplainer = startExplainer; window.exitExplainer = exitExplainer; window.X = X; window.EXPL = EXPL;
+} else if (RENDER_X >= 0) {
+  readUI();
+  camera.position.copy(HOME.p); controls.target.copy(HOME.t);
+  startExplainer(RENDER_X); X.playing = false;
+  window.XDUR = X.total;
+  window.renderAt = t => { X.t = Math.min(t, X.total - 1e-4); frame(0); return true; };
+  window.READY = true;
+} else {
+  const V = +(params.get('v') || 30), RPM = +(params.get('rpm') || 60), T0 = 0.6;
+  S.v = V; S.rpm = RPM; loopChk.checked = false;
+  const target = new THREE.Vector3(-30, 140, 0);
+  window.renderAt = (t, still) => {
+    const tm = Math.max(0, t - T0);
+    S.xc = Math.min(-HALF + V * tm, HALF); S.maxXc = S.xc;
+    S.angle = RPM / 60 * TAU * ((S.xc + HALF) / V);
+    let az, el, r;
+    if (still) { az = +(params.get('az') || 0.62); el = 0.5; r = 1350; }
+    else { az = 0.8 - 0.5 * (t / 13); el = 0.46 + 0.06 * Math.sin(t / 13 * Math.PI); r = 1300 - 120 * Math.sin(t / 13 * Math.PI); }
+    camera.position.set(target.x + r * Math.cos(el) * Math.sin(az), target.y + r * Math.sin(el), target.z + r * Math.cos(el) * Math.cos(az));
+    camera.lookAt(target);
+    frame(0);
+    return true;
+  };
+  window.READY = true;
+}
+</script>
+</body>
+</html>
