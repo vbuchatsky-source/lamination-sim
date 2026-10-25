@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap');
-  html,body{margin:0;height:100%;overflow:hidden;background:#1b1e23;font-family:Rubik,Arial,sans-serif;color:#e8ecf1}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0B1016;font-family:Rubik,Arial,sans-serif;color:#e8ecf1}
   #c{position:fixed;inset:0;display:block;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   html,body{overscroll-behavior:none}
   #labels{position:fixed;inset:0;pointer-events:none}
@@ -263,8 +263,8 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.8;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1b1e23);
-scene.fog = new THREE.Fog(0x1b1e23, 2600, 5200);
+scene.background = new THREE.Color(0x0B1016);
+scene.fog = new THREE.Fog(0x0B1016, 2600, 5200);
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
 
